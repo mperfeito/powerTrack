@@ -20,19 +20,19 @@
                     type="email"
                     class="form-control auth-input"
                     id="email"
+                    v-model="email"
                     placeholder="Enter your email"
                     required
                   />
                 </div>
 
                 <div class="mb-4">
-                  <label for="password" class="form-label"
-                    >Password</label
-                  >
+                  <label for="password" class="form-label">Password</label>
                   <input
                     type="password"
                     class="form-control auth-input"
                     id="password"
+                    v-model="password"
                     placeholder="Enter your password"
                     required
                   />
@@ -46,22 +46,22 @@
                       class="form-check-input"
                       type="checkbox"
                       id="remember"
+                      v-model="rememberMe"
                     />
                     <label class="form-check-label" for="remember"
                       >Remember me</label
                     >
                   </div>
-                 
                 </div>
 
-                <button
-                  type="submit"
-                  class="btn btn-primary btn-lg w-100 py-3 shadow mb-3"
-                >
-                  <router-link to="/dashboard" class="text-white">
+                <router-link to="/dashboard">
+                  <button
+                    type="submit"
+                    class="btn btn-primary btn-lg w-100 py-3 shadow mb-3"
+                  >
                     <i class="fas fa-sign-in-alt me-2"></i> Login
-                  </router-link>
-                </button>
+                  </button>
+                </router-link>
 
                 <div class="text-center mt-4">
                   <p>
@@ -180,5 +180,4 @@ router-link,
 a {
   text-decoration: none !important;
 }
-
 </style>

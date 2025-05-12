@@ -17,78 +17,99 @@
                 <div class="row">
                   <div class="col-md-6 mb-4">
                     <label for="firstName" class="form-label">First Name</label>
-                    <input 
-                      type="text" 
-                      class="form-control auth-input" 
-                      id="firstName" 
-                      placeholder="John"
+                    <input
+                      type="text"
+                      class="form-control auth-input"
+                      id="firstName"
+                      v-model="firstName"
+                      placeholder="Name"
                       required
-                    >
+                    />
                   </div>
                   <div class="col-md-6 mb-4">
                     <label for="lastName" class="form-label">Last Name</label>
-                    <input 
-                      type="text" 
-                      class="form-control auth-input" 
-                      id="lastName" 
-                      placeholder="Doe"
+                    <input
+                      type="text"
+                      class="form-control auth-input"
+                      id="lastName"
+                      v-model="lastName"
+                      placeholder="Last Name"
                       required
-                    >
+                    />
                   </div>
                 </div>
 
                 <div class="mb-4">
                   <label for="email" class="form-label">Email</label>
-                  <input 
-                    type="email" 
-                    class="form-control auth-input" 
-                    id="email" 
+                  <input
+                    type="email"
+                    class="form-control auth-input"
+                    id="email"
+                    v-model="email"
                     placeholder="your@email.com"
                     required
-                  >
+                  />
                 </div>
 
                 <div class="mb-4">
                   <label for="password" class="form-label">Password</label>
-                  <input 
-                    type="password" 
-                    class="form-control auth-input" 
-                    id="password" 
+                  <input
+                    type="password"
+                    class="form-control auth-input"
+                    id="password"
+                    v-model="password"
                     placeholder="Create password"
                     required
-                  >
+                  />
                   <div class="form-text text-muted">Minimum 8 characters</div>
                 </div>
 
                 <div class="mb-4">
-                  <label for="confirmPassword" class="form-label">Confirm Password</label>
-                  <input 
-                    type="password" 
-                    class="form-control auth-input" 
-                    id="confirmPassword" 
+                  <label for="confirmPassword" class="form-label"
+                    >Confirm Password</label
+                  >
+                  <input
+                    type="password"
+                    class="form-control auth-input"
+                    id="confirmPassword"
+                    v-model="confirmPassword"
                     placeholder="Confirm password"
                     required
-                  >
+                  />
                 </div>
 
                 <div class="form-check mb-4">
-                  <input class="form-check-input" type="checkbox" id="terms" required>
+                  <input
+                    class="form-check-input"
+                    type="checkbox"
+                    id="terms"
+                    v-model="agreeTerms"
+                    required
+                  />
                   <label class="form-check-label" for="terms">
-                    I agree to the <a href="#" class="text-primary">Terms of Service</a> and <a href="#" class="text-primary">Privacy Policy</a>
+                    I agree to the
+                    <a href="#" class="text-primary">Terms of Service</a> and
+                    <a href="#" class="text-primary">Privacy Policy</a>
                   </label>
                 </div>
 
-                <button type="submit" class="btn btn-primary btn-lg w-100 py-3 shadow mb-3">
+
+                <button
+                  type="submit"
+                  class="btn btn-primary btn-lg w-100 py-3 shadow mb-3"
+                >
                   <i class="fas fa-user-plus me-2"></i> Create Account
                 </button>
 
                 <div class="text-center mt-4">
-                  <p>Already have an account? 
-                    <router-link to="/login" class="text-primary fw-bold">Sign in</router-link>
+                  <p>
+                    Already have an account?
+                    <router-link to="/login" class="text-primary fw-bold"
+                      >Sign in</router-link
+                    >
                   </p>
                 </div>
               </form>
-
             </div>
           </div>
         </div>

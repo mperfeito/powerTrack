@@ -1,38 +1,53 @@
 <template>
   <div class="home-page">
     <div class="particles"></div>
-    
+
     <div class="container">
       <div class="row justify-content-center align-items-center min-vh-100">
         <div class="col-lg-8 text-center">
           <div class="mb-5 animate__animated animate__fadeInDown">
             <i class="fas fa-bolt logo-icon"></i>
             <h1 class="display-3 fw-bold mt-3">POWER TRACK</h1>
-            <p class="lead mt-3 animate__animated animate__fadeIn animate__delay-1s">
+            <p
+              class="lead mt-3 animate__animated animate__fadeIn animate__delay-1s"
+            >
               Gestão Inteligente de Consumo Energético
             </p>
           </div>
 
-          <div class="card card-blur animate__animated animate__fadeIn animate__delay-1-5s mb-5">
+          <div
+            class="card card-blur animate__animated animate__fadeIn animate__delay-1-5s mb-5"
+          >
             <div class="card-body py-3">
               <p class="mb-0">
-                <i class="fas fa-quote-left me-2" style="color: #467054;"></i>
-                Monitorize, analise e optimize o consumo energético da sua casa de forma inteligente.
-                <i class="fas fa-quote-right ms-2" style="color: #467054;"></i>
+                <i class="fas fa-quote-left me-2" style="color: #467054"></i>
+                Monitorize, analise e optimize o consumo energético da sua casa
+                de forma inteligente.
+                <i class="fas fa-quote-right ms-2" style="color: #467054"></i>
               </p>
             </div>
           </div>
 
-          <div class="d-flex justify-content-center gap-4 animate__animated animate__fadeInUp animate__delay-2s">
-            <router-link to="/login" class="btn btn-primary btn-lg px-4 py-3 shadow">
+          <div
+            class="d-flex justify-content-center gap-4 animate__animated animate__fadeInUp animate__delay-2s"
+          >
+            <router-link
+              to="/login"
+              class="btn btn-primary btn-lg px-4 py-3 shadow"
+            >
               <i class="fas fa-sign-in-alt me-2"></i> Login
             </router-link>
-            <router-link to="/register" class="btn btn-outline-primary btn-lg px-4 py-3 shadow">
+            <router-link
+              to="/register"
+              class="btn btn-outline-primary btn-lg px-4 py-3 shadow"
+            >
               <i class="fas fa-user-plus me-2"></i> Register
             </router-link>
           </div>
 
-          <div class="row mt-5 g-4 animate__animated animate__fadeIn animate__delay-2-5s">
+          <div
+            class="row mt-5 g-4 animate__animated animate__fadeIn animate__delay-2-5s"
+          >
             <div class="col-md-4">
               <div class="feature-card">
                 <i class="fas fa-chart-line feature-icon"></i>
@@ -42,9 +57,9 @@
             </div>
             <div class="col-md-4">
               <div class="feature-card">
-                <i class="fas fa-robot feature-icon"></i>
-                <h5 class="mt-3">Análise</h5>
-                <p>Relatórios inteligentes</p>
+                <i class="fas fa-bullseye feature-icon"></i>
+                <h5 class="mt-3">Metas de Consumo</h5>
+                <p>Acompanhamento inteligente do seu consumo</p>
               </div>
             </div>
             <div class="col-md-4">
@@ -62,7 +77,7 @@
 </template>
 
 <script setup>
-import { onMounted } from 'vue'
+
 </script>
 
 <style scoped>
@@ -139,13 +154,12 @@ import { onMounted } from 'vue'
 }
 
 .btn-outline-primary:hover {
-  
   background: rgba(223, 176, 70);
   color: white;
 }
 
-
-h1, h5 {
+h1,
+h5 {
   color: #467054;
 }
 
@@ -153,15 +167,20 @@ p {
   color: #5a5a5a;
 }
 
-
 .animate__animated {
   --animate-duration: 1s;
 }
 
 @keyframes float {
-  0% { transform: translateY(0px); }
-  50% { transform: translateY(-10px); }
-  100% { transform: translateY(0px); }
+  0% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+  100% {
+    transform: translateY(0px);
+  }
 }
 
 .logo-icon {

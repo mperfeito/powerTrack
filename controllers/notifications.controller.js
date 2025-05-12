@@ -2,6 +2,7 @@ import {
   compareConsumption,
   getPeakHourConsumption,
 } from "../models/notifications.model.js";
+import { getActiveHouse } from "../models/houses.model.js";
 
 export async function notifyHighConsumption(req, res) {
   try {

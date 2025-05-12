@@ -7,6 +7,7 @@ import {
   compareDevices,
 } from "../models/consumptions.model.js";
 import cron from "node-cron";
+import { getActiveHouse } from "../models/houses.model.js";
 
 export async function insertReadings() {
   cron.schedule("*/30 * * * *", async () => {
