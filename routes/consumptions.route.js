@@ -8,13 +8,16 @@ import {
 
 const router = express.Router();
 
-// test route: GET/houses/1/latest
+// test route: GET/latest
 router.get("/latest", latestReading);
-// test route: GET/houses/1/compare-period?period=week
+// test route: GET/compare-period?period=week
 router.get("/compare-period", getPeriod);
-// test route: GET/houses/1/compare-similar
+// test route: GET/compare-similar
 router.get("/compare-similar", getSimilarHouses);
-//teste route: GET/houses/1/compare-devices
+// test route: GET/houses/1/compare-devices
 router.get("/compare-devices", getDevices);
+
+// test route: GET/compare-goal
+// router.get("/compare-goal", getGoalProgress)
 
 export default router;
