@@ -10,7 +10,7 @@ import {
 
 export const getAuthActiveHouse = async (req, res) => {
   try {
-    const house = getActiveHouse(req.user.id_user);
+    const house = await getActiveHouse(req.user.id_user);
     res.json(house);
   } catch (err) {
     console.error(err);
@@ -22,7 +22,7 @@ export const setAuthActiveHouse = async (req, res) => {
   try {
     const activate = await setHouseActive(req.user.id_user, req.params.id);
     if (!activate) {
-      res.status(404).json({ message: "House not found..." });
+      return res.status(404).json({ message: "House not found..." });
     }
     res.status(200).json({ message: "House successfully activated" });
   } catch (err) {
@@ -42,18 +42,25 @@ export const getAuthHouses = async (req, res) => {
 };
 
 export const postAuthHouse = async (req, res) => {
-  const { address } = req.body;
-  const existHouse = await findHouseByAddress(address);
-  if (existHouse)
-    return res
-      .status(400)
-      .json({ error: "House already registered at this address..." });
+  const { address, postal_code, city, country } = req.body;
+
   try {
-    const result = await createHouse(req.user.id_user, req.body);
+    const existHouse = await findHouseByAddress(req.user.id_user, address);
+    if (existHouse) {
+      return res
+        .status(400)
+        .json({ error: "House already registered at this address..." });
+    }
+    const result = await createHouse(req.user.id_user, {
+      address,
+      postal_code,
+      city,
+      country,
+    });
     res.status(201).json({ message: "House created successfully", id: result });
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: "Error creating houses..." });
+    res.status(500).json({ error: "Error creating house..." });
   }
 };
 
@@ -83,6 +90,6 @@ export const deleteAuthHouse = async (req, res) => {
     res.status(204).send();
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: "Error updating house..." });
+    res.status(500).json({ error: "Error deleting house..." });
   }
 };

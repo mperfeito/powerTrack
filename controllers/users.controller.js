@@ -24,9 +24,10 @@ export const register = async (req, res) => {
 
     const existUser = await findByEmail(email);
     if (existUser)
-      return res.status(400).json({ error: "Email already registed" });
+      return res.status(400).json({ error: "Email already registered" });
 
     const hashedPassword = await bcrypt.hash(password, 10);
+
     const newUser = {
       first_name,
       last_name,
@@ -36,11 +37,11 @@ export const register = async (req, res) => {
       password: hashedPassword,
       is_admin,
     };
-    
-    const result = await createUser(newUser);
-    res.status(201).json({ message: "User created successfully", id: result });
+
+    const id = await createUser(newUser);
+    res.status(201).json({ message: "User created successfully", id });
   } catch (err) {
-    console.error("Registing error:", err);
+    console.error("Registering error:", err);
     res.status(500).json({ error: "Error registering user..." });
   }
 };
@@ -48,14 +49,9 @@ export const register = async (req, res) => {
 export const login = async (req, res) => {
   try {
     const { email, password } = req.body;
-
-
     const existUser = await findByEmail(email);
-    if (!existUser)
-      return res.status(400).json({ error: "Invalid credentials..." });
-
     const matchPassword = await bcrypt.compare(password, existUser.password);
-    if (!matchPassword)
+    if (!existUser || !matchPassword)
       return res.status(400).json({ error: "Invalid credentials..." });
 
     const token = jwt.sign({ id: existUser.id_user }, process.env.JWT_SECRET, {
@@ -75,9 +71,14 @@ export const getAuthUser = (req, res) => {
 
 export const updateAuthUser = async (req, res) => {
   try {
-    await updateUser(req.user.id_user, req.body);
-    res.json({ message: "Updated data !" });
-  } catch {
+    let { password, ...otherFields } = req.body;
+
+    password = password ? await bcrypt.hash(password, 10) : req.user.password;
+
+    await updateUser(req.user.id_user, { ...otherFields, password });
+    res.json({ message: "Updated data!" });
+  } catch (err) {
+    console.error("Update error:", err);
     res.status(500).json({ error: "Error updating data..." });
   }
 };
@@ -87,6 +88,7 @@ export const getAll = async (req, res) => {
     const users = await getAllUsers();
     res.json(users);
   } catch {
+    console.error("Fetching users error:", err);
     res.status(500).json({ error: "Error fetching users" });
   }
 };

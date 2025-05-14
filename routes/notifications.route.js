@@ -1,20 +1,14 @@
 import express from "express";
 import {
-  notifyHighConsumption,
-  notifyLowConsumption,
-  notifyPeak,
+  getAuthNotifications,
+  sendNotifications,
+  deleteNotification,
 } from "../controllers/notifications.controller.js";
 
 const router = express.Router();
 
-// test route: /sendNotifications/high/2?period=week
-router.post("/high", notifyHighConsumption);
-// test route: /sendNotifications/low/2?period=month
-router.post("/low", notifyLowConsumption);
-// test route: /sendNotifications/peak
-router.post("/peak", notifyPeak);
-
-// test route: /sendNotifications/goal-done
-// router.post("/goal-done", notifyGoal)
+router.get("/notifications", getAuthNotifications); // GET /api/notifications
+router.post("/sendNotifications", sendNotifications); // POST /api/sendNotifications
+router.delete("/notifications/:id", deleteNotification); // DELTE /api/notifications/1
 
 export default router;

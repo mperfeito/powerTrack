@@ -202,7 +202,7 @@ export const calculateGoalStatus = async (id_house, goal) => {
 
 // Get all goals from a house
 export const getAllGoals = async (req, res) => {
-  const { id_house } = getActiveHouse(req.user.id);
+  const { id_house } = getActiveHouse(req.user.id_user);
 
   try {
     const goals = await new Promise((resolve, reject) => {
@@ -227,7 +227,7 @@ export const getAllGoals = async (req, res) => {
 
 // Get a specific goal by ID
 export const getGoalById = async (req, res) => {
-  const { id_house } = getActiveHouse(req.user.id);
+  const { id_house } = getActiveHouse(req.user.id_user);
   const { id_goal } = req.params;
 
   try {
@@ -251,7 +251,7 @@ export const getGoalById = async (req, res) => {
 
 // Add a new goal
 export const addGoal = async (req, res) => {
-  const { id_house } = getActiveHouse(req.user.id);
+  const { id_house } = getActiveHouse(req.user.id_user);
   const { period_type, target_value, start_date, end_date } = req.body;
 
   if (!period_type || !target_value) {
@@ -288,7 +288,7 @@ export const addGoal = async (req, res) => {
 
 // Delete a goal
 export const deleteGoal = (req, res) => {
-  const { id_house } = getActiveHouse(req.user.id);
+  const { id_house } = getActiveHouse(req.user.id_user);
   const { id_goal } = req.params;
 
   goalsModel.deleteGoal(id_house, id_goal, (err, result) => {

@@ -1,18 +1,5 @@
 import db from "../config/connect.js";
 
-export const setHouseActive = async (userId, houseId) => {
-  try {
-    const [result] = await db.execute(
-      "UPDATE houses SET active = true WHERE id_user = ? AND id_house = ?",
-      [userId, houseId]
-    );
-    return result.length > 0;
-  } catch (err) {
-    console.error("Error to activate house:", err);
-    throw err;
-  }
-};
-
 export const getActiveHouse = async (userId) => {
   try {
     const [result] = await db.execute(
@@ -30,11 +17,11 @@ export const getActiveHouse = async (userId) => {
 };
 
 export const createHouse = async (id, house) => {
-  const { address, postal_code, city } = house;
+  const { address, postal_code, city, country } = house;
   try {
     const [result] = await db.execute(
-      "INSERT INTO houses (id_user, address, postal_code, city) VALUES (?,?,?,?)",
-      [id, address, postal_code, city]
+      "INSERT INTO houses (id_user, address, postal_code, city, country) VALUES (?,?,?,?,?)",
+      [id, address, postal_code, city, country]
     );
     console.log("House created with id:", result.insertId);
     return result.insertId;
@@ -107,5 +94,31 @@ export const findHouseById = async (id, houseId) => {
   } catch (err) {
     console.error("Error finding house by id:", err);
     throw err;
+  }
+};
+
+export const setHouseActive = async (userId, houseId) => {
+  const connection = await db.getConnection();
+  try {
+    await connection.beginTransaction();
+
+    await connection.execute(
+      "UPDATE houses SET active = false WHERE id_user = ?",
+      [userId]
+    );
+
+    const [result] = await connection.execute(
+      "UPDATE houses SET active = true WHERE id_user = ? AND id_house = ?",
+      [userId, houseId]
+    );
+
+    await connection.commit();
+    return result.affectedRows > 0;
+  } catch (err) {
+    await connection.rollback();
+    console.error("Error to activate house:", err);
+    throw err;
+  } finally {
+    connection.release();
   }
 };

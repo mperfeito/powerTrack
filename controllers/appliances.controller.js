@@ -1,8 +1,8 @@
 import * as appliancesModel from "../models/appliances.model.js";
 import { getActiveHouse } from "../models/houses.model.js";
 
-export const getAllAppliances = (req, res) => {
-  const { id_house } = getActiveHouse(req.user.id);
+export const getAllAppliances = async (req, res) => {
+  const { id_house } = await getActiveHouse(req.user.id_user);
 
   appliancesModel.getAppliancesByHouseId(id_house, (err, appliances) => {
     if (err) {
@@ -20,11 +20,11 @@ export const getAllAppliances = (req, res) => {
   });
 };
 
-export const getApplianceById = (req, res) => {
-  const { houseId } = getActiveHouse(req.user.id);
-  const { applianceId } = req.params;
+export const getApplianceById = async (req, res) => {
+  const { id_house } = await getActiveHouse(req.user.id_user);
+  const { id_appliance } = req.params;
 
-  appliancesModel.getApplianceById(houseId, applianceId, (err, appliance) => {
+  appliancesModel.getApplianceById(id_house, id_appliance, (err, appliance) => {
     if (err) {
       console.error("Error fetching appliance:", err);
       return res.status(500).json({ errorMessage: "Internal server error" });
@@ -39,8 +39,8 @@ export const getApplianceById = (req, res) => {
 };
 
 // Create a new appliance for a specific house
-export const createAppliance = (req, res) => {
-  const { id_house } = getActiveHouse(req.user.id);
+export const createAppliance = async (req, res) => {
+  const { id_house } = await getActiveHouse(req.user.id_user);
   const { type, state, avg_operating_hours, nominal_power_watts } = req.body;
 
   // Validate the request body parameters
@@ -63,7 +63,7 @@ export const createAppliance = (req, res) => {
         return res.status(500).json({ errorMessage: "Internal server error" });
       }
 
-      // Return success message with the created appliance
+     
       res
         .status(201)
         .json({ message: "Resource successfully created", appliance });
@@ -73,7 +73,7 @@ export const createAppliance = (req, res) => {
 
 // Delete an appliance by ID
 export const deleteAppliance = (req, res) => {
-  const { id_house } = getActiveHouse(req.user.id);
+  const { id_house } = getActiveHouse(req.user.id_user);
   const { id_appliance } = req.params;
 
   appliancesModel.deleteAppliance(id_house, id_appliance, (err, result) => {

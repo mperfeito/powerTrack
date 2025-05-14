@@ -3,13 +3,9 @@ import * as controller from "../controllers/goals.controller.js";
 
 const router = express.Router();
 
-// test route: GET/goals
-router.get("/goals", controller.getAllGoals);
-// test route: GET/goals/1
-router.get("/goals/:id_goal", controller.getGoalById);
-// test route: POST/goals
-router.post("/goals", controller.addGoal);
-// test route: DELETE/goals/1
-router.delete("/goals/:id_goal", controller.deleteGoal);
+router.get("/", controller.getAllGoals); // GET /api/goals
+router.get("/:id_goal", controller.getGoalById); // GEt /api/goals/1
+router.post("/", controller.addGoal); // POST /api/goals
+router.delete("/:id_goal", controller.deleteGoal); // DELETE /api/goals/1
 
 export default router;

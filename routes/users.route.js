@@ -12,13 +12,6 @@ import housesRoutes from "./houses.route.js";
 
 const router = express.Router();
 
-function adminMiddleware(req, res, next) {
-  if (!req.user || !req.user.is_admin) {
-    return res.status(403).json({ error: "Access denied..." });
-  }
-  next();
-}
-
 const registerFields = [
   "first_name",
   "last_name",
@@ -27,20 +20,15 @@ const registerFields = [
   "nif",
   "password",
 ];
-const loginFields = ["email", "password"];
 
-router.post("/", validateFields(registerFields, "all"), register);
-router.post("/login", validateFields(loginFields, "any"), login);
+router.post("/", validateFields(registerFields, "all"), register); // POST api/users
 
-router.use("/me/houses", authMiddleware, housesRoutes);
-router.get("/me", authMiddleware, getAuthUser);
+router.get("/me", authMiddleware, getAuthUser); // GET api/users/me
 router.patch(
   "/me",
   authMiddleware,
-  validateFields(registerFields, 'any'),
+  validateFields(registerFields, "any"),
   updateAuthUser
-);
-
-router.get("/", adminMiddleware, getAll);
+); //PATCH api/users/me
 
 export default router;

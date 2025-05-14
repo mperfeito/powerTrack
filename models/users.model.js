@@ -5,7 +5,7 @@ export const findByEmail = async (email) => {
     const [result] = await db.execute("SELECT * FROM users WHERE email = ?", [
       email,
     ]);
-    return result.length > 0 ? result[0] : null;
+    return result[0] || null;
   } catch (err) {
     console.error("Error finding user by email:", err);
     throw err;
@@ -17,7 +17,7 @@ export const findById = async (id) => {
     const [result] = await db.execute("SELECT * FROM users WHERE id_user = ?", [
       id,
     ]);
-    return result.length > 0 ? result[0] : null;
+    return result[0] || null;
   } catch (err) {
     console.error("Error finding user by id:", err);
     throw err;
@@ -49,17 +49,23 @@ export const createUser = async (user) => {
     throw err;
   }
 };
-
 export const updateUser = async (id, user) => {
-  const { firstName, lastName, email, phoneNumber, password } = user;
+  const { first_name, last_name, email, phone_number, password } = user;
+
   try {
     const [result] = await db.execute(
-      "UPDATE users SET first_name = ?, last_name = ?, email = ?, phone_number = ?, password = ? WHERE id_user = ?",
-      [firstName, lastName, email, phoneNumber, password, id]
+      `UPDATE users SET 
+        first_name = ?, 
+        last_name = ?, 
+        email = ?, 
+        phone_number = ?, 
+        password = ?
+      WHERE id_user = ?`,
+      [first_name, last_name, email, phone_number, password, id]
     );
     return result.affectedRows > 0;
   } catch (err) {
-    console.error("Error updating user:", user);
+    console.error("Error updating user:", err);
     throw err;
   }
 };
