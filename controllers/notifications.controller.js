@@ -5,11 +5,11 @@ import {
   getNotifications,
   deleteNotificationById
 } from "../models/notifications.model.js";
-import { getAllHouses, getActiveHouse } from "../models/houses.model.js";
+import { getHouses, getActiveHouse } from "../models/houses.model.js";
 
 export async function checkHighConsumption() {
   try {
-    const houses = await getAllHouses();
+    const houses = await getHouses();
 
     for (const house of houses) {
       const results = await checkConsumptionChanges(house.id);
@@ -35,7 +35,7 @@ export async function checkHighConsumption() {
 
 export async function checkLowConsumption() {
   try {
-    const houses = await getAllHouses();
+    const houses = await getHouses();
 
     for (const house of houses) {
       const results = await checkConsumptionChanges(house.id);
@@ -61,7 +61,7 @@ export async function checkLowConsumption() {
 
 export async function checkPeakHours() {
   try {
-    const houses = await getAllHouses();
+    const houses = await getHouses();
 
     for (const house of houses) {
       const result = await getPeakHourConsumption(house.id);

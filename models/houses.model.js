@@ -3,13 +3,13 @@ import db from "../config/connect.js";
 export const getActiveHouse = async (userId) => {
   try {
     const [result] = await db.execute(
-      "SELECT id FROM houses WHERE id_user = ? AND active = true LIMIT 1",
+      "SELECT id_house FROM houses WHERE id_user = ? AND active = true LIMIT 1",
       [userId]
     );
     if (result.length === 0) {
       throw new Error("Nenhuma casa ativa encontrada.");
     }
-    return result[0].id;
+    return result[0];
   } catch (err) {
     console.error("Erro ao buscar casa ativa:", err);
     throw err;
@@ -17,11 +17,11 @@ export const getActiveHouse = async (userId) => {
 };
 
 export const createHouse = async (id, house) => {
-  const { address, postal_code, city, country } = house;
+  const { address, postal_code, city } = house;
   try {
     const [result] = await db.execute(
-      "INSERT INTO houses (id_user, address, postal_code, city, country) VALUES (?,?,?,?,?)",
-      [id, address, postal_code, city, country]
+      "INSERT INTO houses (id_user, address, postal_code, city) VALUES (?,?,?,?)",
+      [id, address, postal_code, city]
     );
     console.log("House created with id:", result.insertId);
     return result.insertId;
@@ -98,27 +98,19 @@ export const findHouseById = async (id, houseId) => {
 };
 
 export const setHouseActive = async (userId, houseId) => {
-  const connection = await db.getConnection();
   try {
-    await connection.beginTransaction();
+    await db.execute("UPDATE houses SET active = false WHERE id_user = ?", [
+      userId,
+    ]);
 
-    await connection.execute(
-      "UPDATE houses SET active = false WHERE id_user = ?",
-      [userId]
-    );
-
-    const [result] = await connection.execute(
+    const [result] = await db.execute(
       "UPDATE houses SET active = true WHERE id_user = ? AND id_house = ?",
       [userId, houseId]
     );
 
-    await connection.commit();
-    return result.affectedRows > 0;
+    return result.affectedRows > 0 ? { success: true, houseId } : null;
   } catch (err) {
-    await connection.rollback();
-    console.error("Error to activate house:", err);
+    console.error("Erro ao ativar casa:", err);
     throw err;
-  } finally {
-    connection.release();
   }
 };

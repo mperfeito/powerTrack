@@ -3,6 +3,8 @@ import * as controller from "../controllers/goals.controller.js";
 
 const router = express.Router();
 
+
+
 router.get("/", controller.getAllGoals); // GET /api/goals
 router.get("/:id_goal", controller.getGoalById); // GEt /api/goals/{id}
 router.post("/", controller.addGoal); // POST /api/goals

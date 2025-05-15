@@ -49,14 +49,30 @@ export const register = async (req, res) => {
 export const login = async (req, res) => {
   try {
     const { email, password } = req.body;
+    console.log('Login attempt for email:', email); // Add this
+    console.log('Provided password:', password); // Add this
+
     const existUser = await findByEmail(email);
-    const matchPassword = await bcrypt.compare(password, existUser.password);
-    if (!existUser || !matchPassword)
+    console.log('User found in DB:', existUser); // Add this
+
+    if (!existUser) {
+      console.log('No user found with this email'); // Add this
       return res.status(400).json({ error: "Invalid credentials..." });
+    }
+
+    console.log('Stored hashed password:', existUser.password); // Add this
+    const matchPassword = await bcrypt.compare(password, existUser.password);
+    console.log('Password match result:', matchPassword); // Add this
+
+    if (!matchPassword) {
+      console.log('Password does not match'); // Add this
+      return res.status(400).json({ error: "Invalid credentials..." });
+    }
 
     const token = jwt.sign({ id: existUser.id_user }, process.env.JWT_SECRET, {
       expiresIn: "1h",
     });
+
     res.json({ token });
   } catch (err) {
     console.error("Login error:", err);

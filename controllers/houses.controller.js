@@ -11,25 +11,31 @@ import {
 export const getAuthActiveHouse = async (req, res) => {
   try {
     const house = await getActiveHouse(req.user.id_user);
-    res.json(house);
+
+    if (!house) {
+      return res.status(404).json({ error: "No active house found" });
+    }
+
+    res.status(200).json({ id_house: house.id_house });
   } catch (err) {
-    console.error(err);
+    console.error("Erro ao buscar casa ativa:", err);
     res.status(500).json({ error: "Error fetching house..." });
   }
 };
 
 export const setAuthActiveHouse = async (req, res) => {
+  const houseId = req.params.id;
+  const userId = req.user.id_user;
+
   try {
-    const activate = await setHouseActive(req.user.id_user, req.params.id);
-    if (!activate) {
-      return res.status(404).json({ message: "House not found..." });
-    }
-    res.status(200).json({ message: "House successfully activated" });
+    await setHouseActive(userId, houseId);
+    res.status(200).json({ message: "Casa ativada com sucesso", id_house: `${houseId}` });
   } catch (err) {
-    console.error(err);
+    console.error("Erro ao ativar casa:", err.message);
     res.status(500).json({ error: "Error activating house..." });
   }
 };
+
 
 export const getAuthHouses = async (req, res) => {
   try {
@@ -42,7 +48,7 @@ export const getAuthHouses = async (req, res) => {
 };
 
 export const postAuthHouse = async (req, res) => {
-  const { address, postal_code, city, country } = req.body;
+  const { address, postal_code, city } = req.body;
 
   try {
     const existHouse = await findHouseByAddress(req.user.id_user, address);
@@ -54,8 +60,7 @@ export const postAuthHouse = async (req, res) => {
     const result = await createHouse(req.user.id_user, {
       address,
       postal_code,
-      city,
-      country,
+      city
     });
     res.status(201).json({ message: "House created successfully", id: result });
   } catch (err) {
@@ -80,6 +85,7 @@ export const putAuthHouse = async (req, res) => {
 };
 
 export const deleteAuthHouse = async (req, res) => {
+  console.log(req.user.id_user);
   try {
     const result = await deleteHouse(req.user.id_user, req.params.id);
     if (!result) {

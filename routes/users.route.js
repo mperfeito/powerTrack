@@ -20,14 +20,14 @@ const registerFields = [
   "password",
 ];
 
-router.post("/", validateFields(registerFields, "all"), register); // POST api/users
+router.post("/", validateFields(registerFields, "all"), register); // POST api/users ☑️
 
-router.get("/me", authMiddleware, getAuthUser); // GET api/users/me
+router.get("/me", authMiddleware, getAuthUser); // GET api/users/me ☑️
 router.patch(
   "/me",
   authMiddleware,
   validateFields(registerFields, "any"),
   updateAuthUser
-); //PATCH api/users/me
+); //PATCH api/users/me ☑️
 
 export default router;
