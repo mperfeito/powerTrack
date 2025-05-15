@@ -19,6 +19,7 @@ export async function getHouses() {
 }
 
 export async function getLatest(houseId) {
+   console.log("Procurando latest para houseId:", houseId);
   const query = `
     SELECT consumption_value, reading_date
     FROM consumption_readings

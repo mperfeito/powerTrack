@@ -29,7 +29,7 @@ export async function insertReadings() {
 
 export async function getPeriod(req, res) {
   try {
-    const houseId = await getActiveHouse(req.user.id);
+ const { id_house: houseId } = await getActiveHouse(req.user.id_user);
 
     const { period } = req.query;
 
@@ -48,7 +48,7 @@ export async function getPeriod(req, res) {
 
 export async function getSimilarHouses(req, res) {
   try {
-    const houseId = await getActiveHouse(req.user.id);
+    const { id_house: houseId } = await getActiveHouse(req.user.id_user);
 
     const result = await compareWithSimilarHouses(houseId);
     res.json(result);
@@ -60,7 +60,7 @@ export async function getSimilarHouses(req, res) {
 
 export async function getDevices(req, res) {
   try {
-    const houseId = await getActiveHouse(req.user.id);
+const { id_house: houseId } = await getActiveHouse(req.user.id_user);
 
     const result = await compareDevices(houseId);
     res.json(result);
@@ -75,11 +75,17 @@ export async function getDevices(req, res) {
 
 export async function latestReading(req, res) {
   try {
-    const houseId = await getActiveHouse(req.user.id);
+    console.log("Utilizador autenticado:", req.user.id_user);
+
+    const { id_house: houseId } = await getActiveHouse(req.user.id_user);
+    console.log("Casa ativa:", houseId);
 
     const result = await getLatest(houseId);
+    console.log("Resultado final:", result);
+
     if (!result.length)
       return res.status(404).json({ message: "No data found" });
+
     res.status(200).json(result[0]);
   } catch (error) {
     console.error(error);
