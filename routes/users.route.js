@@ -3,12 +3,11 @@ import { authMiddleware } from "../middlewares/authMiddleware.js";
 import { validateFields } from "../middlewares/validateFields.js";
 import {
   register,
-  login,
+
   getAuthUser,
   updateAuthUser,
-  getAll,
 } from "../controllers/users.controller.js";
-import housesRoutes from "./houses.route.js";
+
 
 const router = express.Router();
 

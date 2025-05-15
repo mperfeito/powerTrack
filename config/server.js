@@ -7,6 +7,7 @@ import "../jobs/notificationsJobs.js";
 import { authMiddleware } from "../middlewares/authMiddleware.js";
 import { validateFields } from "../middlewares/validateFields.js";
 import userRoutes from "../routes/users.route.js";
+import { login } from "../controllers/users.controller.js";
 
 dotenv.config();
 
