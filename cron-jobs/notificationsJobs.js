@@ -5,11 +5,11 @@ import {
   checkPeakHours
 } from '../controllers/notifications.controller.js';
 
-// correm diáriamente às 8 da manhã
-cron.schedule('0 8 * * *', checkHighConsumption);
+// correr de 1 em 1 minuto
+cron.schedule('* * * * *', checkHighConsumption);
 
-cron.schedule('0 8 * * *', checkLowConsumption);
+cron.schedule('* * * * *', checkLowConsumption);
 
-cron.schedule('0 8 * * *', checkPeakHours);
+cron.schedule('* * * * *', checkPeakHours);
 
 console.log('Scheduledddddddd.....');

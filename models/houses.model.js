@@ -1,6 +1,7 @@
 import db from "../config/connect.js";
 
 export const getActiveHouse = async (userId) => {
+    console.log(`A buscar casa ativa para o user ${userId}`);
   try {
     const [result] = await db.execute(
       "SELECT id_house FROM houses WHERE id_user = ? AND active = true LIMIT 1",
@@ -43,6 +44,17 @@ export const getHouses = async (id) => {
     throw err;
   }
 };
+
+export const getAllHouses = async () => {
+  try {
+    const [result] = await db.execute("SELECT * FROM houses");
+    return result;
+  } catch (err) {
+    console.log("Error fetching all houses:", err);
+    throw err;
+  }
+};
+
 
 export const updateHouse = async (id, houseId, house) => {
   const { address, postal_code, city } = house;

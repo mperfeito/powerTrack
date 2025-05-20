@@ -2,18 +2,15 @@ import db from '../config/connect.js';
 
 // Fetch all goals of a house
 export const getGoalsByHouseId = (id_house, callback) => {
-    const query = 'SELECT * FROM goals WHERE id_house = ?';
-    db.query(query, [id_house], (err, results) => {
-        if (err) {
-            console.error('Error fetching goals:', err);
-            return callback(err, null);
-        }
-        if (!Array.isArray(results)) {
-            console.error('Result is not an array:', results);
-            return callback(new Error('Result is not an array'), null);
-        }
-        return callback(null, results);
-    });
+  const query = 'SELECT * FROM goals WHERE id_house = ?';
+  db.query(query, [id_house], (err, results) => {
+    if (err) {
+      console.error('Erro ao buscar metas no BD:', err);
+      return callback(err, null);
+    }
+
+    return callback(null, results);
+  });
 };
 
 // Fetch a goal by house ID and goal ID

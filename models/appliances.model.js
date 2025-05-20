@@ -1,37 +1,43 @@
 import db from '../config/connect.js';
 
 // Get all Appliances
-export const getAppliancesByHouseId = (id_house, callback) => {
-    const sql = 'SELECT * FROM appliances WHERE id_house = ?';
-    db.query(sql, [id_house], (err, results) => {
-        if (err) return callback(err);
-        callback(null, results);
-    });
+export const getAppliancesByHouseId = async (id_house) => {
+    try {
+        const [results] = await db.execute(
+            'SELECT * FROM appliances WHERE id_house = ?',
+            [id_house]
+        );
+        return results;
+    } catch (err) {
+        console.error('Error fetching appliances by house ID:', err);
+        throw err;
+    }
 };
 
 // Get Appliance By Id
-export const getApplianceById = (id_house, id_appliance, callback) => {
-    const sql = 'SELECT * FROM appliances WHERE id_house = ? AND id_appliance = ?';
-    db.query(sql, [id_house, id_appliance], (err, result) => {
-        if (err) return callback(err);
-        callback(null, result[0]); 
-    });
+export const getApplianceById = async (id_house, id_appliance) => {
+    try {
+        const [results] = await db.execute(
+            'SELECT * FROM appliances WHERE id_house = ? AND id_appliance = ?',
+            [id_house, id_appliance]
+        );
+        return results[0] || null;
+    } catch (err) {
+        console.error('Error fetching appliance by ID:', err);
+        throw err;
+    }
 };
 
 // Add a new appliance to the house
-export const addAppliance = (id_house, type, state, avg_operating_hours, nominal_power_watts, callback) => {
-    const query = `
-        INSERT INTO appliances (id_house, type, state, operating_hours, nominal_power_watts)
-        VALUES (?, ?, ?, ?, ?)
-    `;
+export const addAppliance = async (id_house, type, state, avg_operating_hours, nominal_power_watts) => {
+    try {
+        const [result] = await db.execute(
+            `INSERT INTO appliances (id_house, type, state, operating_hours, nominal_power_watts)
+             VALUES (?, ?, ?, ?, ?)`,
+            [id_house, type, state, avg_operating_hours, nominal_power_watts]
+        );
 
-    db.query(query, [id_house, type, state, avg_operating_hours, nominal_power_watts], (err, result) => {
-        if (err) {
-            return callback(err, null);
-        }
-
-        // Return the created appliance with its new id
-        const newAppliance = {
+        return {
             id_appliance: result.insertId,
             id_house,
             type,
@@ -39,20 +45,35 @@ export const addAppliance = (id_house, type, state, avg_operating_hours, nominal
             operating_hours: avg_operating_hours,
             nominal_power_watts
         };
-        callback(null, newAppliance);
-    });
+    } catch (err) {
+        console.error('Error adding appliance:', err);
+        throw err;
+    }
 };
 
 // Delete an appliance by its ID
-export const deleteAppliance = (houseId, applianceId, callback) => {
-    const query = 'DELETE FROM appliances WHERE id_house = ? AND id_appliance = ?';
+export const deleteAppliance = async (houseId, applianceId) => {
+    try {
+        const [result] = await db.execute(
+            'DELETE FROM appliances WHERE id_house = ? AND id_appliance = ?',
+            [houseId, applianceId]
+        );
+        return result;
+    } catch (err) {
+        console.error('Error deleting appliance:', err);
+        throw err;
+    }
+};
 
-    db.query(query, [houseId, applianceId], (err, result) => {
-        if (err) {
-            return callback(err, null);
-        }
-
-        // Return the result to indicate how many rows were affected
-        callback(null, result);
-    });
+export const getApplianceByType = async (id_house, type) => {
+  try {
+    const [results] = await db.execute(
+      'SELECT * FROM appliances WHERE id_house = ? AND type = ?',
+      [id_house, type]
+    );
+    return results[0] || null;
+  } catch (err) {
+    console.error('Error fetching appliance by type:', err);
+    throw err;
+  }
 };

@@ -3,13 +3,13 @@ import {
   getPeakHourConsumption,
   createNotification,
   getNotifications,
-  deleteNotificationById
+  deleteNotificationById,
 } from "../models/notifications.model.js";
-import { getHouses, getActiveHouse } from "../models/houses.model.js";
+import { getAllHouses, getActiveHouse } from "../models/houses.model.js";
 
 export async function checkHighConsumption() {
   try {
-    const houses = await getHouses();
+    const houses = await getAllHouses();
 
     for (const house of houses) {
       const results = await checkConsumptionChanges(house.id);
@@ -35,7 +35,7 @@ export async function checkHighConsumption() {
 
 export async function checkLowConsumption() {
   try {
-    const houses = await getHouses();
+    const houses = await getAllHouses();
 
     for (const house of houses) {
       const results = await checkConsumptionChanges(house.id);
@@ -61,7 +61,7 @@ export async function checkLowConsumption() {
 
 export async function checkPeakHours() {
   try {
-    const houses = await getHouses();
+    const houses = await getAllHouses();
 
     for (const house of houses) {
       const result = await getPeakHourConsumption(house.id);
@@ -94,9 +94,11 @@ export async function sendNotifications(req, res) {
 
 export async function getAuthNotifications(req, res) {
   try {
-    const houseId = await getActiveHouse(req.user.id);
+    const { id_house: houseId } = await getActiveHouse(req.user.id_user);
     if (!houseId) {
-      return res.status(404).json({ error: "No active house found for the user." });  
+      return res
+        .status(404)
+        .json({ error: "No active house found for the user." });
     }
     const notifications = await getNotifications(houseId);
     res.json(notifications);
@@ -105,7 +107,6 @@ export async function getAuthNotifications(req, res) {
     res.status(500).json({ error: "Error fetching notifications..." });
   }
 }
-
 
 export async function deleteNotification(req, res) {
   try {
@@ -117,4 +118,3 @@ export async function deleteNotification(req, res) {
     res.status(500).json({ error: "Error deleting notification" });
   }
 }
-
