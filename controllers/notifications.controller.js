@@ -1,3 +1,4 @@
+// NOTIFICATIONS.CONTROLLER.JS
 import {
   checkConsumptionChanges,
   getPeakHourConsumption,
@@ -5,27 +6,29 @@ import {
   getNotifications,
   deleteNotificationById,
 } from "../models/notifications.model.js";
-import { getAllHouses, getActiveHouse } from "../models/houses.model.js";
+import {  getActiveHouse } from "../models/houses.model.js";
 
-export async function checkHighConsumption() {
+export async function checkHighConsumption(req) {
   try {
-    const houses = await getAllHouses();
+    const { id_house: houseId } = await getActiveHouse(req.user.id_user);
+    if (!houseId) {
+      console.log("No active house found for the user.");
+      return;
+    }
 
-    for (const house of houses) {
-      const results = await checkConsumptionChanges(house.id);
+    const results = await checkConsumptionChanges(houseId);
 
-      for (const [period, data] of Object.entries(results)) {
-        if (data.percentage_change >= 10) {
-          const message =
-            `High ${period}ly consumption: Increased by ${data.percentage_change.toFixed(
-              2
-            )}% ` +
-            `(Current: ${data.current.toFixed(
-              2
-            )} vs Previous: ${data.previous.toFixed(2)})`;
+    for (const [period, data] of Object.entries(results)) {
+      if (data.percentage_change >= 10) {
+        const message =
+          `High ${period}ly consumption: Increased by ${data.percentage_change.toFixed(
+            2
+          )}% ` +
+          `(Current: ${data.current.toFixed(
+            2
+          )} vs Previous: ${data.previous.toFixed(2)})`;
 
-          await createNotification(house.id, "high_consumption", message);
-        }
+        await createNotification(houseId, "high_consumption", message);
       }
     }
   } catch (error) {
@@ -33,25 +36,27 @@ export async function checkHighConsumption() {
   }
 }
 
-export async function checkLowConsumption() {
+export async function checkLowConsumption(req) {
   try {
-    const houses = await getAllHouses();
+    const { id_house: houseId } = await getActiveHouse(req.user.id_user);
+    if (!houseId) {
+      console.log("No active house found for the user.");
+      return;
+    }
 
-    for (const house of houses) {
-      const results = await checkConsumptionChanges(house.id);
+    const results = await checkConsumptionChanges(houseId);
 
-      for (const [period, data] of Object.entries(results)) {
-        if (data.percentage_change <= -10) {
-          const message =
-            `Low ${period}ly consumption: Decreased by ${Math.abs(
-              data.percentage_change
-            ).toFixed(2)}% ` +
-            `(Current: ${data.current.toFixed(
-              2
-            )} vs Previous: ${data.previous.toFixed(2)})`;
+    for (const [period, data] of Object.entries(results)) {
+      if (data.percentage_change <= -10) {
+        const message =
+          `Low ${period}ly consumption: Decreased by ${Math.abs(
+            data.percentage_change
+          ).toFixed(2)}% ` +
+          `(Current: ${data.current.toFixed(
+            2
+          )} vs Previous: ${data.previous.toFixed(2)})`;
 
-          await createNotification(house.id, "low_consumption", message);
-        }
+        await createNotification(houseId, "low_consumption", message);
       }
     }
   } catch (error) {
@@ -59,20 +64,22 @@ export async function checkLowConsumption() {
   }
 }
 
-export async function checkPeakHours() {
+export async function checkPeakHours(req) {
   try {
-    const houses = await getAllHouses();
+    const { id_house: houseId } = await getActiveHouse(req.user.id_user);
+    if (!houseId) {
+      console.log("No active house found for the user.");
+      return;
+    }
 
-    for (const house of houses) {
-      const result = await getPeakHourConsumption(house.id);
+    const result = await getPeakHourConsumption(houseId);
 
-      if (result.hour) {
-        const message = `Peak consumption: ${result.value.toFixed(
-          2
-        )} watts at ${result.hour}:00 yesterday`;
+    if (result.hour) {
+      const message = `Peak consumption: ${result.value.toFixed(
+        2
+      )} watts at ${result.hour}:00 yesterday`;
 
-        await createNotification(house.id, "peak_consumption", message);
-      }
+      await createNotification(houseId, "peak_consumption", message);
     }
   } catch (error) {
     console.error("Error checking peak", error);
@@ -81,9 +88,9 @@ export async function checkPeakHours() {
 
 export async function sendNotifications(req, res) {
   try {
-    await checkHighConsumption();
-    await checkLowConsumption();
-    await checkPeakHours();
+    await checkHighConsumption(req);
+    await checkLowConsumption(req);
+    await checkPeakHours(req);
 
     res.status(200).json({ message: "Notifications sent successfully" });
   } catch (err) {
