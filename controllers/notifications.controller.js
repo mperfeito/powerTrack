@@ -83,7 +83,8 @@ export async function sendNotifications(req, res) {
   try {
     await checkHighConsumption();
     await checkLowConsumption();
-    await checkPeakHours();
+    await checkPeakHours(); 
+    //criar a de meta 
 
     res.status(200).json({ message: "Notifications sent successfully" });
   } catch (err) {
