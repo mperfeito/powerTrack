@@ -1,110 +1,112 @@
 import db from '../config/connect.js';
 
 // Fetch all goals of a house
-export const getGoalsByHouseId = (id_house, callback) => {
-  const query = 'SELECT * FROM goals WHERE id_house = ?';
-  db.query(query, [id_house], (err, results) => {
-    if (err) {
-      console.error('Erro ao buscar metas no BD:', err);
-      return callback(err, null);
+export const getGoalsByHouseId = async (id_house) => {
+    try {
+        const [results] = await db.execute(
+            'SELECT * FROM goals WHERE id_house = ?',
+            [id_house]
+        );
+        return results;
+    } catch (err) {
+        console.error('Error fetching goals:', err);
+        throw err;
     }
-
-    return callback(null, results);
-  });
 };
 
 // Fetch a goal by house ID and goal ID
-export const getGoalById = (id_house, id_goal, callback) => {
-    const query = 'SELECT * FROM goals WHERE id_house = ? AND id_goal = ?';
-    db.query(query, [id_house, id_goal], (err, results) => {
-        if (err) {
-            console.error('Error fetching goal:', err);
-            return callback(err, null);
-        }
-        if (!Array.isArray(results) || results.length === 0) {
-            return callback(null, null);
-        }
-        return callback(null, results[0]);
-    });
+export const getGoalById = async (id_house, id_goal) => {
+    try {
+        const [results] = await db.execute(
+            'SELECT * FROM goals WHERE id_house = ? AND id_goal = ?',
+            [id_house, id_goal]
+        );
+        return results[0] || null;
+    } catch (err) {
+        console.error('Error fetching goal:', err);
+        throw err;
+    }
 };
 
-// Get total consumption for a specific day (used for daily goal or peak hour comparison)
-export const getTotalConsumptionByDay = (id_house, date, callback) => {
-    const sql = `
-        SELECT SUM(consumption_value) AS total 
-        FROM consumption_readings 
-        WHERE id_house = ? AND DATE(reading_date) = ?
-    `;
-    db.query(sql, [id_house, date], (err, results) => {
-        if (err) return callback(err);
-        const total = results[0]?.total || 0;
-        callback(null, total);
-    });
+// Get total consumption for a specific day
+export const getTotalConsumptionByDay = async (id_house, date) => {
+    try {
+        const [results] = await db.execute(
+            `SELECT SUM(consumption_value) AS total 
+             FROM consumption_readings 
+             WHERE id_house = ? AND DATE(reading_date) = ?`,
+            [id_house, date]
+        );
+        return results[0]?.total || 0;
+    } catch (err) {
+        console.error('Error fetching daily consumption:', err);
+        throw err;
+    }
 };
 
-// Get total consumption between two dates (used for weekly/monthly goals)
-export const getTotalConsumptionByPeriod = (id_house, startDate, endDate, callback) => {
-    const sql = `
-        SELECT SUM(consumption_value) AS total 
-        FROM consumption_readings 
-        WHERE id_house = ? AND reading_date BETWEEN ? AND ?
-    `;
-    db.query(sql, [id_house, startDate, endDate], (err, results) => {
-        if (err) return callback(err);
-        const total = results[0]?.total || 0;
-        callback(null, total);
-    });
+// Get total consumption between two dates
+export const getTotalConsumptionByPeriod = async (id_house, startDate, endDate) => {
+    try {
+        const [results] = await db.execute(
+            `SELECT SUM(consumption_value) AS total 
+             FROM consumption_readings 
+             WHERE id_house = ? AND reading_date BETWEEN ? AND ?`,
+            [id_house, startDate, endDate]
+        );
+        return results[0]?.total || 0;
+    } catch (err) {
+        console.error('Error fetching period consumption:', err);
+        throw err;
+    }
 };
 
-// Get total consumption between two exact date-times (used for peak hour calculations)
-export const getTotalConsumptionByDateTimeRange = (id_house, startDateTime, endDateTime, callback) => {
-    const sql = `
-        SELECT SUM(consumption_value) AS total
-        FROM consumption_readings
-        WHERE id_house = ?
-        AND reading_date BETWEEN ? AND ?
-    `;
-
-    db.query(sql, [id_house, startDateTime, endDateTime], (err, results) => {
-        if (err) return callback(err);
-        const total = results[0]?.total || 0;
-        callback(null, total);
-    });
+// Get total consumption between two exact date-times
+export const getTotalConsumptionByDateTimeRange = async (id_house, startDateTime, endDateTime) => {
+    try {
+        const [results] = await db.execute(
+            `SELECT SUM(consumption_value) AS total
+             FROM consumption_readings
+             WHERE id_house = ?
+             AND reading_date BETWEEN ? AND ?`,
+            [id_house, startDateTime, endDateTime]
+        );
+        return results[0]?.total || 0;
+    } catch (err) {
+        console.error('Error fetching datetime range consumption:', err);
+        throw err;
+    }
 };
 
 // Insert a new goal
-export const createGoal = (goalData, callback) => {
-    const query = 'INSERT INTO goals (id_house, period_type, target_value, start_date, end_date) VALUES (?, ?, ?, ?, ?)';
-    const values = [goalData.id_house, goalData.period_type, goalData.target_value, goalData.start_date, goalData.end_date];
+export const createGoal = async (goalData) => {
+    try {
+        const [result] = await db.execute(
+            `INSERT INTO goals (id_house, period_type, target_value, start_date, end_date) 
+             VALUES (?, ?, ?, ?, ?)`,
+            [goalData.id_house, goalData.period_type, goalData.target_value, 
+             goalData.start_date, goalData.end_date]
+        );
 
-    db.query(query, values, (err, result) => {
-        if (err) {
-            console.error('Error inserting goal:', err);
-            return callback(err, null);
-        }
-        const goal = {
-            id: result.insertId,
-            id_house: goalData.id_house,
-            period_type: goalData.period_type,
-            target_value: goalData.target_value,
-            start_date: goalData.start_date,
-            end_date: goalData.end_date
+        return {
+            id_goal: result.insertId,
+            ...goalData
         };
-
-        callback(null, goal);
-    });
+    } catch (err) {
+        console.error('Error inserting goal:', err);
+        throw err;
+    }
 };
-
 
 // Delete a goal
-export const deleteGoal = (id_house, id_goal, callback) => {
-    const query = 'DELETE FROM goals WHERE id_house = ? AND id_goal = ?';
-    db.query(query, [id_house, id_goal], (err, result) => {
-        if (err) {
-            callback(err, null);
-        } else {
-            callback(null, result);
-        }
-    });
+export const deleteGoal = async (id_house, id_goal) => {
+    try {
+        const [result] = await db.execute(
+            'DELETE FROM goals WHERE id_house = ? AND id_goal = ?',
+            [id_house, id_goal]
+        );
+        return result;
+    } catch (err) {
+        console.error('Error deleting goal:', err);
+        throw err;
+    }
 };
-
