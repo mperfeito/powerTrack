@@ -88,9 +88,9 @@ export async function checkPeakHours(req) {
 
 export async function sendNotifications(req, res) {
   try {
-    await checkHighConsumption();
-    await checkLowConsumption();
-    await checkPeakHours();
+    await checkHighConsumption(req);
+    await checkLowConsumption(req);
+    await checkPeakHours(req);
 
     res.status(200).json({ message: "Notifications sent successfully" });
   } catch (err) {
