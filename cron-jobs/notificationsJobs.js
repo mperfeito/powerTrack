@@ -2,7 +2,7 @@ import cron from 'node-cron';
 import {
   checkHighConsumption,
   checkLowConsumption,
-  checkPeakHours
+  checkPeakHours, 
 } from '../controllers/notifications.controller.js';
 
 // correr de 1 em 1 minuto

@@ -4,9 +4,10 @@ import {
   getPeakHourConsumption,
   createNotification,
   getNotifications,
-  deleteNotificationById,
+  deleteNotificationById
 } from "../models/notifications.model.js";
 import {  getActiveHouse } from "../models/houses.model.js";
+
 
 export async function checkHighConsumption(req) {
   try {
