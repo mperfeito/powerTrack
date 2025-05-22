@@ -50,7 +50,7 @@ export const createAppliance = async (req, res) => {
       });
     }
 
-  a
+  
     const existingAppliance = await appliancesModel.getApplianceByType(id_house, type);
 
     if (existingAppliance) {
