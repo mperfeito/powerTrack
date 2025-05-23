@@ -110,3 +110,16 @@ export const deleteGoal = async (id_house, id_goal) => {
         throw err;
     }
 };
+
+export const getCurrentDayProgress = async (id_house) => {
+    const today = new Date().toISOString().slice(0, 10);
+    const [result] = await db.execute(
+        `SELECT HOUR(reading_date) as hour, SUM(consumption_value) as consumption
+         FROM consumption_readings
+         WHERE id_house = ? AND DATE(reading_date) = ?
+         GROUP BY HOUR(reading_date)
+         ORDER BY hour`,
+        [id_house, today]
+    );
+    return result;
+};
