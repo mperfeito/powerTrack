@@ -1,3 +1,4 @@
+//HOUSES.MODEL.JS
 import db from "../config/connect.js";
 
 export const getActiveHouse = async (userId) => {

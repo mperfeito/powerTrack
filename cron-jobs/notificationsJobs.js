@@ -1,15 +1,17 @@
-import cron from 'node-cron';
-import {
-  checkHighConsumption,
-  checkLowConsumption,
-  checkPeakHours, 
-} from '../controllers/notifications.controller.js';
+//NOTIFICATIONSJOBS.JS
 
-// correr de 1 em 1 minuto
-cron.schedule('* * * * *', checkHighConsumption);
+// import cron from 'node-cron';
+// import {
+//   checkHighConsumption,
+//   checkLowConsumption,
+//   checkPeakHours, 
+// } from '../controllers/notifications.controller.js';
 
-cron.schedule('* * * * *', checkLowConsumption);
+// // correr de 1 em 1 minuto
+// cron.schedule('* * * * *', checkHighConsumption);
 
-cron.schedule('* * * * *', checkPeakHours);
+// cron.schedule('* * * * *', checkLowConsumption);
 
-console.log('Scheduledddddddd.....');
+// cron.schedule('* * * * *', checkPeakHours);
+
+// console.log('Scheduledddddddd.....');
