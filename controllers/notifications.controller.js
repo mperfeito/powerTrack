@@ -6,12 +6,15 @@ import {
   getNotifications,
   deleteNotificationById
 } from "../models/notifications.model.js";
-import {  getActiveHouse } from "../models/houses.model.js";
+import {  getActiveHouse } from "../models/houses.model.js"; 
+//J
+import * as goalsModel from "../models/goals.model.js";
+import { calculateGoalStatus } from "../controllers/goals.controller.js"; 
 
 
-export async function checkHighConsumption(req) {
+export async function checkHighConsumption(userId) {
   try {
-    const { id_house: houseId } = await getActiveHouse(req.user.id_user);
+    const { id_house: houseId } = await getActiveHouse(userId);
     if (!houseId) {
       console.log("No active house found for the user.");
       return;
@@ -37,9 +40,9 @@ export async function checkHighConsumption(req) {
   }
 }
 
-export async function checkLowConsumption(req) {
+export async function checkLowConsumption(userId) {
   try {
-    const { id_house: houseId } = await getActiveHouse(req.user.id_user);
+    const { id_house: houseId } = await getActiveHouse(userId);
     if (!houseId) {
       console.log("No active house found for the user.");
       return;
@@ -65,40 +68,132 @@ export async function checkLowConsumption(req) {
   }
 }
 
-export async function checkPeakHours(req) {
+export async function checkPeakHours(userId) {
   try {
-    const { id_house: houseId } = await getActiveHouse(req.user.id_user);
-    if (!houseId) {
+    const activeHouse = await getActiveHouse(userId);
+    if (!activeHouse || !activeHouse.id_house) {
       console.log("No active house found for the user.");
       return;
     }
 
-    const result = await getPeakHourConsumption(houseId);
+    const result = await getPeakHourConsumption(activeHouse.id_house);
 
-    if (result.hour) {
+    if (result?.hour) {
       const message = `Peak consumption: ${result.value.toFixed(
         2
       )} watts at ${result.hour}:00 yesterday`;
 
-      await createNotification(houseId, "peak_consumption", message);
+      await createNotification(activeHouse.id_house, "peak_consumption", message);
     }
   } catch (error) {
     console.error("Error checking peak", error);
   }
 }
 
+
 export async function sendNotifications(req, res) {
   try {
-    await checkHighConsumption(req);
-    await checkLowConsumption(req);
-    await checkPeakHours(req);
-
+    const userId = req.user.id_user;
+    await checkHighConsumption(userId);
+    await checkLowConsumption(userId);
+    await checkPeakHours(userId);  
+    //J
+    await goalCompleted(userId); 
     res.status(200).json({ message: "Notifications sent successfully" });
   } catch (err) {
     console.error("Error sending notifications", err);
     res.status(500).json({ error: "Error sending notifications" });
   }
 }
+//J
+export async function goalCompleted(userId) {
+  try {
+    const { id_house } = await getActiveHouse(userId);
+    if (!id_house) {
+      return res.status(404).json({ 
+        success: false,
+        message: "No active house found for the user."
+      });
+    }
+
+    const goals = await goalsModel.getGoalsByHouseId(id_house);
+    
+    if (!goals || goals.length === 0) {
+      return res.status(200).json({
+        success: true,
+        message: "No goals found for this house",
+        notifications_sent: 0
+      });
+    }
+
+    let notificationsSent = 0;
+    const results = [];
+
+    for (const goal of goals) {
+      const goalWithStatus = await calculateGoalStatus(id_house, goal);
+      const previousStatus = await goalsModel.getGoalStatus(id_house, goal.id_goal);
+      
+      if (goalWithStatus.completed && (!previousStatus || !previousStatus.completed)) {
+        const message = getCompletionMessage(goal);
+        await createNotification(id_house, "goal_completed", message);
+        await goalsModel.updateGoalStatus(id_house, goal.id_goal, true);
+        notificationsSent++;
+        
+        results.push({
+          goal_id: goal.id_goal,
+          goal_type: goal.period_type,
+          target_value: goal.target_value,
+          message: message,
+          notified: true
+        });
+      } else {
+        results.push({
+          goal_id: goal.id_goal,
+          goal_type: goal.period_type,
+          target_value: goal.target_value,
+          message: "Goal not completed or already notified",
+          notified: false
+        });
+        
+        // Reset status if goal is no longer completed
+        if (previousStatus?.completed && !goalWithStatus.completed) {
+          await goalsModel.updateGoalStatus(id_house, goal.id_goal, false);
+        }
+      }
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: "Goal completion check completed",
+      notifications_sent: notificationsSent,
+      goals_checked: goals.length,
+      details: results
+    });
+
+  } catch (error) {
+    console.error("Error checking goal completion", error);
+    return res.status(500).json({
+      success: false,
+      error: "Internal server error while checking goal completion"
+    });
+  }
+}
+
+function getCompletionMessage(goal) {
+  const target = goal.target_value;
+  const unit = goal.period_type === 'peak_hour' ? '%' : 'watts';
+  
+  const messages = {
+    'daily': `Daily goal completed! Consumption stayed below ${target}${unit} today.`,
+    'monthly': `Monthly goal completed! Consumption stayed below ${target}${unit} this month.`,
+    'monthly_reduction': `Monthly reduction goal completed! Achieved ${target}% reduction compared to last month.`,
+    'weekly_reduction': `Weekly reduction goal completed! Achieved ${target}% reduction compared to last week.`,
+    'peak_hour': `Peak hour goal completed! Consumption during peak hours was below ${target}% of daily total.`
+  };
+
+  return messages[goal.period_type] || `Goal completed! Target was ${target}${unit}.`;
+}
+  //-J
 
 export async function getAuthNotifications(req, res) {
   try {
