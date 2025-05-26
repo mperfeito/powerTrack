@@ -227,16 +227,8 @@ export const calculateGoalProgress = async (req, res) => {
             
             // Get consumptions in parallel
             const [currentConsumption, referenceConsumption] = await Promise.all([
-                goalsModel.getTotalConsumptionByPeriod(
-                    id_house,
-                    currentWeekStart.toISOString().slice(0, 10),
-                    currentWeekEnd.toISOString().slice(0, 10)
-                ),
-                goalsModel.getTotalConsumptionByPeriod(
-                    id_house,
-                    previousWeekStart.toISOString().slice(0, 10),
-                    previousWeekEnd.toISOString().slice(0, 10)
-                )
+                goalsModel.getTotalConsumptionByPeriod(id_house, currentWeekStart.toISOString().slice(0, 10), currentWeekEnd.toISOString().slice(0, 10)),
+                goalsModel.getTotalConsumptionByPeriod(id_house, previousWeekStart.toISOString().slice(0, 10), previousWeekEnd.toISOString().slice(0, 10))
             ]);
             
             // Handle no reference data
@@ -269,55 +261,97 @@ export const calculateGoalProgress = async (req, res) => {
             });
         }
 
-        // Monthly Goal Calculation
-        if (goal.period_type === 'monthly') {
-            const today = new Date();
-            const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
-            const endOfMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0);
-            
-            const currentConsumption = await goalsModel.getTotalConsumptionByPeriod(
-                id_house,
-                startOfMonth.toISOString().slice(0, 10),
-                endOfMonth.toISOString().slice(0, 10)
-            );
-            
-            const lastDayOfMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0);
-            const daysRemaining = lastDayOfMonth.getDate() - today.getDate();
-            
+        // Monthly Reduction Goal Calculation
+        if (goal.period_type === 'monthly_reduction') {
+            const reductionPercentage = goal.target_value / 100;
+
+            // Use goal's end_date as reference for the target month
+            const evaluationDate = new Date(goal.end_date);
+
+            // Target month (goal period)
+            const targetMonthStart = new Date(evaluationDate.getFullYear(), evaluationDate.getMonth(), 1);
+            const targetMonthEnd = new Date(evaluationDate.getFullYear(), evaluationDate.getMonth() + 1, 0);
+
+            // Reference month (previous month)
+            const referenceMonthStart = new Date(evaluationDate.getFullYear(), evaluationDate.getMonth() - 1, 1);
+            const referenceMonthEnd = new Date(evaluationDate.getFullYear(), evaluationDate.getMonth(), 0);
+
+            // Get consumption values
+            const [targetMonthConsumption, referenceMonthConsumption] = await Promise.all([
+                goalsModel.getTotalConsumptionByPeriod(id_house, targetMonthStart.toISOString().slice(0, 10), targetMonthEnd.toISOString().slice(0, 10)),
+                goalsModel.getTotalConsumptionByPeriod(id_house, referenceMonthStart.toISOString().slice(0, 10), referenceMonthEnd.toISOString().slice(0, 10))
+            ]);
+
+            // No reference data
+            if (referenceMonthConsumption === 0) {
+                const lastDayOfTargetMonth = new Date(evaluationDate.getFullYear(), evaluationDate.getMonth() + 1, 0);
+                // const daysRemaining = lastDayOfTargetMonth.getDate() - evaluationDate.getDate();
+
+                return res.status(200).json({
+                    goal,
+                    current_value: targetMonthConsumption,
+                    reference_value: 0,
+                    allowed_limit: 0,
+                    progress_percentage: 0,
+                    remaining: 0,
+                    is_completed: false,
+                    // days_remaining: daysRemaining,
+                    reduction_target: `${goal.target_value}% reduction`
+                });
+            }
+
+            // Calculate metrics
+            const allowedLimit = referenceMonthConsumption * (1 - reductionPercentage);
+            const progressPercentage = (targetMonthConsumption / allowedLimit) * 100;
+            const lastDayOfTargetMonth = new Date(evaluationDate.getFullYear(), evaluationDate.getMonth() + 1, 0);
+            // const daysRemaining = lastDayOfTargetMonth.getDate() - evaluationDate.getDate();
+
             return res.status(200).json({
                 goal,
-                current_value: currentConsumption,
-                progress_percentage: Math.min((currentConsumption / goal.target_value) * 100, 100),
-                remaining: Math.max(goal.target_value - currentConsumption, 0),
-                is_completed: currentConsumption <= goal.target_value,
-                days_remaining: daysRemaining
+                current_value: targetMonthConsumption,
+                reference_value: referenceMonthConsumption,
+                allowed_limit: allowedLimit,
+                progress_percentage: Math.min(progressPercentage, 100),
+                remaining: Math.max(allowedLimit - targetMonthConsumption, 0),
+                is_completed: targetMonthConsumption <= allowedLimit,
+                // days_remaining: daysRemaining,
+                reduction_target: `${goal.target_value}% reduction`
             });
         }
 
-        // Peak Hour Goal Calculation
-        if (goal.period_type === 'peak_hour') {
-            const today = new Date().toISOString().slice(0, 10);
-            const [total, peakConsumption] = await Promise.all([
-                goalsModel.getTotalConsumptionByDay(id_house, today),
-                goalsModel.getTotalConsumptionByDateTimeRange(
-                    id_house, 
-                    `${today}T18:00:00`, 
-                    `${today}T21:00:00`
-                )
-            ]);
-            
-            const allowedPeak = total * (goal.target_value / 100);
-            
+
+        // Monthly Goal Calculation
+        if (goal.period_type === 'monthly') {
+            // Use the goal's period for consumption calculation
+            const periodStart = new Date(goal.start_date);
+            const periodEnd = new Date(goal.end_date);
+
+            // Get current date to calculate days remaining only if within period
+            const today = new Date();
+
+            // Fetch consumption in the goal's period
+            const currentConsumption = await goalsModel.getTotalConsumptionByPeriod(id_house, periodStart.toISOString().slice(0, 10), periodEnd.toISOString().slice(0, 10));
+
+            // Calculate days remaining only if 'today' is within the goal period
+            // let daysRemaining = 0;
+            // if (today >= periodStart && today <= periodEnd) {
+            //     daysRemaining = Math.ceil((periodEnd - today) / (1000 * 60 * 60 * 24));
+            // }
+
+            // Parse target value as number
+            const targetValue = parseFloat(goal.target_value);
+
             return res.status(200).json({
                 goal,
-                current_value: peakConsumption,
-                total_consumption: total,
-                allowed_limit: allowedPeak,
-                progress_percentage: Math.min((peakConsumption / allowedPeak) * 100, 100),
-                remaining: Math.max(allowedPeak - peakConsumption, 0),
-                is_completed: peakConsumption <= allowedPeak
+                current_value: currentConsumption,
+                target_value: targetValue,
+                progress_percentage: Math.min((currentConsumption / targetValue) * 100, 100),
+                remaining: Math.max(targetValue - currentConsumption, 0),
+                is_completed: currentConsumption <= targetValue,
+                // days_remaining: daysRemaining
             });
         }
+
 
         return res.status(400).json({ message: 'Unsupported goal type' });
         
@@ -326,135 +360,3 @@ export const calculateGoalProgress = async (req, res) => {
         res.status(500).json({ errorMessage: 'Internal server error' });
     }
 };
-
-
-
-
-
-
-// export const calculateGoalProgress = async (req, res) => {
-//     try {
-//         const { id_house } = await getActiveHouse(req.user.id_user);
-//         const { id_goal } = req.params;
-        
-//         const goal = await goalsModel.getGoalById(id_house, id_goal);
-        
-//         if (!goal) {
-//             return res.status(404).json({ message: 'Goal not found for this house' });
-//         }
-
-//         let progressData;
-        
-//         switch(goal.period_type) {
-//             case 'daily':
-//                 progressData = await calculateDailyProgress(id_house, goal);
-//                 break;
-//             case 'weekly_reduction':
-//                 progressData = await calculateWeeklyReductionProgress(id_house, goal);
-//                 break;
-//             // ... other cases
-//             default:
-//                 return res.status(400).json({ message: 'Unsupported goal type' });
-//         }
-
-//         res.status(200).json(progressData);
-//     } catch (err) {
-//         console.error('Error calculating goal progress:', err);
-//         res.status(500).json({ errorMessage: 'Internal server error' });
-//     }
-// };
-
-// async function calculateDailyProgress(id_house, goal) {
-//     const today = new Date().toISOString().slice(0, 10);
-//     const current = await goalsModel.getTotalConsumptionByDay(id_house, today);
-    
-//     const progressPercentage = (current / goal.target_value) * 100;
-//     const remaining = Math.max(goal.target_value - current, 0);
-//     const isCompleted = current <= goal.target_value;
-
-//     return {
-//         goal,
-//         current_value: current,
-//         progress_percentage: Math.min(progressPercentage, 100),
-//         remaining,
-//         is_completed: isCompleted,
-//     };
-// };
-
-// function getCurrentWeekRange() {
-//     const today = new Date();
-//     const start = new Date(today);
-//     start.setDate(today.getDate() - today.getDay()); // Set to Sunday of current week
-//     const end = new Date(start);
-//     end.setDate(start.getDate() + 6); // Set to Saturday of current week
-    
-//     return {
-//         start: new Date(start.setHours(0, 0, 0, 0)),
-//         end: new Date(end.setHours(23, 59, 59, 999))
-//     };
-// }
-
-// function getPreviousWeekRange() {
-//     const currentWeek = getCurrentWeekRange();
-//     const start = new Date(currentWeek.start);
-//     start.setDate(start.getDate() - 7);
-//     const end = new Date(currentWeek.end);
-//     end.setDate(end.getDate() - 7);
-    
-//     return {
-//         start,
-//         end
-//     };
-// }
-
-// async function calculateWeeklyReductionProgress(id_house, goal) {
-//     try {
-//         const reductionPercentage = goal.target_value / 100;
-//         const currentWeek = getCurrentWeekRange();
-//         const previousWeek = getPreviousWeekRange();
-
-//         const [currentConsumption, referenceConsumption] = await Promise.all([
-//             goalsModel.getTotalConsumptionByPeriod(
-//                 id_house,
-//                 currentWeek.start.toISOString().slice(0, 10),
-//                 currentWeek.end.toISOString().slice(0, 10)
-//             ),
-//             goalsModel.getTotalConsumptionByPeriod(
-//                 id_house,
-//                 previousWeek.start.toISOString().slice(0, 10),
-//                 previousWeek.end.toISOString().slice(0, 10)
-//             )
-//         ]);
-
-//         // Handle case where there's no reference consumption
-//         if (referenceConsumption === 0) {
-//             return {
-//                 goal,
-//                 current_value: currentConsumption,
-//                 reference_value: 0,
-//                 allowed_limit: 0,
-//                 progress_percentage: 0,
-//                 remaining: 0,
-//                 is_completed: false,
-//                 days_remaining: 7 - new Date().getDay()
-//             };
-//         }
-
-//         const allowedLimit = referenceConsumption * (1 - reductionPercentage);
-//         const progressPercentage = (currentConsumption / allowedLimit) * 100;
-
-//         return {
-//             goal,
-//             current_value: currentConsumption,
-//             reference_value: referenceConsumption,
-//             allowed_limit: allowedLimit,
-//             progress_percentage: Math.min(progressPercentage, 100),
-//             remaining: Math.max(allowedLimit - currentConsumption, 0),
-//             is_completed: currentConsumption <= allowedLimit,
-//             days_remaining: 7 - new Date().getDay()
-//         };
-//     } catch (error) {
-//         console.error("Error in weekly reduction calculation:", error);
-//         throw error;
-//     }
-// }
