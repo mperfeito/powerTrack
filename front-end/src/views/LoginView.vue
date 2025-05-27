@@ -54,14 +54,14 @@
                   </div>
                 </div>
 
-                <!-- <router-link to="/dashboard"> -->
+                <router-link to="/dashboard">
                   <button
                     type="submit"
                     class="btn btn-primary btn-lg w-100 py-3 shadow mb-3"
                   >
                     <i class="fas fa-sign-in-alt me-2"></i> Login
                   </button>
-                <!-- </router-link> -->
+                </router-link>
 
                 <div class="text-center mt-4">
                   <p>
