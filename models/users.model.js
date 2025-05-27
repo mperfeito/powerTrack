@@ -46,7 +46,8 @@ module.export = (sequelize, DataTypes) => {
     tableName: "users",
     timestamps: false,
   }
-)}
+);
+
 
 export const findByEmail = async (email) => {
   try {

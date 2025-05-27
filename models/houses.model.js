@@ -157,18 +157,6 @@ export const setHouseActive = async (userId, houseId) => {
     console.error("Erro ao ativar casa:", err);
     throw err;
   }
-}; 
-
-export const getAllActiveHouses = async () => {
-  try {
-    const [result] = await db.execute(
-      "SELECT id_house, id_user FROM houses WHERE active = true"
-    );
-    return result;
-  } catch (err) {
-    console.error("Error fetching active houses:", err);
-    throw err;
-  }
 };
 
 export default House;
