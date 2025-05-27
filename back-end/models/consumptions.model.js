@@ -13,6 +13,7 @@
 //   }
 // }
 
+
 // export async function getHouses() {
 //   const [rows] = await db.query("SELECT id_house FROM houses");
 //   return rows;
