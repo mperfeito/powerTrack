@@ -3,7 +3,7 @@ import db from "../config/connect.js";
 
 export async function insertConsumptions(houseId, value) {
   try {
-    await db.query(
+    let data = await db.query(
       "INSERT INTO consumption_readings (id_house, consumption_value) VALUES (?, ?)",
       [houseId, value]
     );

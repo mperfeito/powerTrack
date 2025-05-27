@@ -1,6 +1,6 @@
 
 import axios from "axios";
-import { useAuthStore } from "@/stores/authStore";
+import { useAuthStore } from "../front-end/src/stores/authStore";
 
 const api = axios.create({
   baseURL: "http://localhost:3000/api/users",
