@@ -4,17 +4,20 @@ import { getActiveHouse } from '../models/houses.model.js';
 // Calculate if the goal was completed
 export const calculateGoalStatus = async (id_house, goal) => {
     try {
+        // Convert Sequelize instance to plain object
+        const plainGoal = goal.get({ plain: true });
+
         // When goal is 'daily'
-        if (goal.period_type === 'daily') {
+        if (plainGoal.period_type === 'daily') {
             const today = new Date().toISOString().slice(0, 10);
             const total = await goalsModel.getTotalConsumptionByDay(id_house, today);
-            const completed = (total || 0) <= goal.target_value;
-            return { ...goal, completed };
+            const completed = (total || 0) <= plainGoal.target_value;
+            return { ...plainGoal, completed };
         }
 
         // When goal is 'monthly_reduction'
-        if (goal.period_type === 'monthly_reduction') {
-            const reductionPercentage = goal.target_value / 100;
+        if (plainGoal.period_type === 'monthly_reduction') {
+            const reductionPercentage = plainGoal.target_value / 100;
             const today = new Date();
             
             const currentMonthStart = new Date(today.getFullYear(), today.getMonth(), 1);
@@ -36,17 +39,17 @@ export const calculateGoalStatus = async (id_house, goal) => {
 
             const allowedLimit = referenceConsumption * (1 - reductionPercentage);
             const completed = currentConsumption <= allowedLimit;
-            return { ...goal, completed };
+            return { ...plainGoal, completed };
         }
 
         // When goal is 'weekly_reduction'
-        if (goal.period_type === 'weekly_reduction') {
-        const { completed } = await calculateWeeklyReduction(id_house, goal);
-        return { ...goal, completed };
+        if (plainGoal.period_type === 'weekly_reduction') {
+            const { completed } = await calculateWeeklyReduction(id_house, plainGoal);
+            return { ...plainGoal, completed };
         }
 
         // When goal is 'monthly'
-        if (goal.period_type === 'monthly') {
+        if (plainGoal.period_type === 'monthly') {
             const today = new Date();
             const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
             const endOfMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0);
@@ -57,12 +60,12 @@ export const calculateGoalStatus = async (id_house, goal) => {
                 endOfMonth.toISOString().slice(0, 10)
             );
 
-            const completed = total <= goal.target_value;
-            return { ...goal, completed };
+            const completed = total <= plainGoal.target_value;
+            return { ...plainGoal, completed };
         }
 
         // When goal is 'peak_hour'
-        if (goal.period_type === 'peak_hour') {
+        if (plainGoal.period_type === 'peak_hour') {
             const today = new Date().toISOString().slice(0, 10);
             const total = await goalsModel.getTotalConsumptionByDay(id_house, today);
             
@@ -75,17 +78,18 @@ export const calculateGoalStatus = async (id_house, goal) => {
                 peakHourEnd
             );
 
-            const allowedPeakConsumption = total * (goal.target_value / 100);
+            const allowedPeakConsumption = total * (plainGoal.target_value / 100);
             const completed = peakConsumption <= allowedPeakConsumption;
-            return { ...goal, completed };
+            return { ...plainGoal, completed };
         }
 
-        return { ...goal, completed: false };
+        return { ...plainGoal, completed: false };
     } catch (err) {
         console.error('Error calculating goal status:', err);
-        return { ...goal, completed: false };
+        return { ...goal.get({ plain: true }), completed: false };
     }
 };
+
 
 // Get all goals from a house
 export const getAllGoals = async (req, res) => {
@@ -163,10 +167,11 @@ export const deleteGoal = async (req, res) => {
     try {
         const { id_house } = await getActiveHouse(req.user.id_user);
         const { id_goal } = req.params;
-        
-        const result = await goalsModel.deleteGoal(id_house, id_goal);
-        
-        if (result.affectedRows === 0) {
+
+        // Sequelize returns a number (count of rows deleted)
+        const deletedCount = await goalsModel.deleteGoal(id_house, id_goal);
+
+        if (deletedCount === 0) {
             return res.status(404).json({ 
                 errorMessage: 'Goal not found to delete' 
             });

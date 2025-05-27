@@ -1,32 +1,70 @@
-//HOUSES.MODEL.JS
-import db from "../config/connect.js";
+import { DataTypes } from 'sequelize';
+import sequelize from './db.js';
+
+// Definir modelo House
+const House = sequelize.define(
+  "House",
+  {
+    id_house: {
+      type: DataTypes.INTEGER,
+      primaryKey: true,
+      autoIncrement: true,
+    },
+    id_user: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+    },
+    address: {
+      type: DataTypes.STRING,
+    },
+    postal_code: {
+      type: DataTypes.STRING,
+    },
+    city: {
+      type: DataTypes.STRING,
+    },
+    active: {
+      type: DataTypes.BOOLEAN,
+      defaultValue: false,
+    },
+  },
+  {
+    tableName: "houses",
+    timestamps: false,
+  }
+);
+
+// Funções para exportar
 
 export const getActiveHouse = async (userId) => {
-    console.log(`A buscar casa ativa para o user ${userId}`);
   try {
-    const [result] = await db.execute(
-      "SELECT id_house FROM houses WHERE id_user = ? AND active = true LIMIT 1",
-      [userId]
-    );
-    if (result.length === 0) {
+    const house = await House.findOne({
+      where: { id_user: userId, active: true },
+      attributes: ["id_house"],
+    });
+
+    if (!house) {
       throw new Error("Nenhuma casa ativa encontrada.");
     }
-    return result[0];
+    return house;
   } catch (err) {
     console.error("Erro ao buscar casa ativa:", err);
     throw err;
   }
 };
 
-export const createHouse = async (id, house) => {
-  const { address, postal_code, city } = house;
+export const createHouse = async (id, houseData) => {
+  const { address, postal_code, city } = houseData;
   try {
-    const [result] = await db.execute(
-      "INSERT INTO houses (id_user, address, postal_code, city) VALUES (?,?,?,?)",
-      [id, address, postal_code, city]
-    );
-    console.log("House created with id:", result.insertId);
-    return result.insertId;
+    const newHouse = await House.create({
+      id_user: id,
+      address,
+      postal_code,
+      city,
+      active: false,
+    });
+    console.log("House created with id:", newHouse.id_house);
+    return newHouse.id_house;
   } catch (err) {
     console.error("Error creating house:", err);
     throw err;
@@ -35,36 +73,32 @@ export const createHouse = async (id, house) => {
 
 export const getHouses = async (id) => {
   try {
-    const [result] = await db.execute(
-      "SELECT * FROM houses WHERE id_user = ?",
-      [id]
-    );
-    return result;
+    return await House.findAll({
+      where: { id_user: id },
+    });
   } catch (err) {
-    console.log("Error fetching houses:", err);
+    console.error("Error fetching houses:", err);
     throw err;
   }
 };
 
 export const getAllHouses = async () => {
   try {
-    const [result] = await db.execute("SELECT * FROM houses");
-    return result;
+    return await House.findAll();
   } catch (err) {
-    console.log("Error fetching all houses:", err);
+    console.error("Error fetching all houses:", err);
     throw err;
   }
 };
 
-
-export const updateHouse = async (id, houseId, house) => {
-  const { address, postal_code, city } = house;
+export const updateHouse = async (id, houseId, houseData) => {
+  const { address, postal_code, city } = houseData;
   try {
-    const [result] = await db.execute(
-      "UPDATE houses SET address = ?, postal_code = ?, city = ? WHERE id_house = ? AND id_user = ?",
-      [address, postal_code, city, houseId, id]
+    const [affectedRows] = await House.update(
+      { address, postal_code, city },
+      { where: { id_house: houseId, id_user: id } }
     );
-    return result.affectedRows > 0;
+    return affectedRows > 0;
   } catch (err) {
     console.error("Error updating house:", err);
     throw err;
@@ -73,11 +107,10 @@ export const updateHouse = async (id, houseId, house) => {
 
 export const deleteHouse = async (id, houseId) => {
   try {
-    const [result] = await db.execute(
-      "DELETE FROM houses WHERE id_house = ? AND id_user = ?",
-      [houseId, id]
-    );
-    return result.affectedRows > 0;
+    const affectedRows = await House.destroy({
+      where: { id_house: houseId, id_user: id },
+    });
+    return affectedRows > 0;
   } catch (err) {
     console.error("Error deleting house:", err);
     throw err;
@@ -86,11 +119,10 @@ export const deleteHouse = async (id, houseId) => {
 
 export const findHouseByAddress = async (id, address) => {
   try {
-    const [result] = await db.execute(
-      "SELECT * FROM houses WHERE id_user = ? AND address = ?",
-      [id, address]
-    );
-    return result.length > 0 ? result[0] : null;
+    const house = await House.findOne({
+      where: { id_user: id, address },
+    });
+    return house || null;
   } catch (err) {
     console.error("Error finding house by address:", err);
     throw err;
@@ -99,11 +131,10 @@ export const findHouseByAddress = async (id, address) => {
 
 export const findHouseById = async (id, houseId) => {
   try {
-    const [result] = await db.execute(
-      "SELECT * FROM houses WHERE id_user = ? AND id_house=?",
-      [id, houseId]
-    );
-    return result.length > 0 ? result[0] : null;
+    const house = await House.findOne({
+      where: { id_user: id, id_house: houseId },
+    });
+    return house || null;
   } catch (err) {
     console.error("Error finding house by id:", err);
     throw err;
@@ -112,18 +143,20 @@ export const findHouseById = async (id, houseId) => {
 
 export const setHouseActive = async (userId, houseId) => {
   try {
-    await db.execute("UPDATE houses SET active = false WHERE id_user = ?", [
-      userId,
-    ]);
+    // Desativa todas as casas do user
+    await House.update({ active: false }, { where: { id_user: userId } });
 
-    const [result] = await db.execute(
-      "UPDATE houses SET active = true WHERE id_user = ? AND id_house = ?",
-      [userId, houseId]
+    // Ativa a casa selecionada
+    const [affectedRows] = await House.update(
+      { active: true },
+      { where: { id_user: userId, id_house: houseId } }
     );
 
-    return result.affectedRows > 0 ? { success: true, houseId } : null;
+    return affectedRows > 0 ? { success: true, houseId } : null;
   } catch (err) {
     console.error("Erro ao ativar casa:", err);
     throw err;
   }
 };
+
+export default House;
