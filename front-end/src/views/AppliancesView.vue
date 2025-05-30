@@ -83,7 +83,7 @@
       <div class="appliance-list-horizontal">
         <div
           class="appliance-card-horizontal"
-          v-for="appliance in appliances"
+          v-for="appliance in appliancesStore.appliances"
           :key="appliance.id"
         >
           <div class="appliance-info">
@@ -136,7 +136,7 @@
   </div>
 </template>
 
-<script setup>
+<!-- <script setup>
 import Sidebar from "@/components/Sidebar.vue";
 import { ref } from "vue";
 
@@ -225,7 +225,83 @@ const resetForm = () => {
   };
   isEditing.value = false;
 };
+</script> -->
+
+<script setup>
+import Sidebar from "@/components/Sidebar.vue";
+import { ref, onMounted } from "vue";
+import { useAppliancesStore } from "@/stores/appliancesStore";
+
+const appliancesStore = useAppliancesStore();
+
+const isEditing = ref(false);
+const currentAppliance = ref({
+  id: null,
+  name: "",
+  nominal_power_watts: "",
+  state: "on",
+  operating_hours: "",
+});
+
+const stateIcon = (state) => {
+  return {
+    on: "fa-power-off text-success",
+    off: "fa-toggle-off text-danger",
+    standby: "fa-pause-circle text-warning",
+  }[state];
+};
+
+const calculateDailyConsumption = (appliance) => {
+  return appliance.nominal_power_watts * appliance.operating_hours;
+};
+
+const editAppliance = (appliance) => {
+  currentAppliance.value = { ...appliance };
+  isEditing.value = true;
+  window.scrollTo({ top: 0, behavior: "smooth" });
+};
+
+const saveAppliance = async () => {
+  try {
+    if (isEditing.value) {
+      await appliancesStore.updateAppliance(currentAppliance.value);
+    } else {
+      await appliancesStore.createAppliance(currentAppliance.value);
+    }
+    resetForm();
+  } catch (error) {
+    console.error("Erro ao salvar aparelho:", error);
+    alert("Não foi possível salvar o aparelho.");
+  }
+};
+
+const deleteAppliance = async (id) => {
+  if (confirm("Are you sure you want to delete this appliance?")) {
+    try {
+      await appliancesStore.deleteAppliance(id);
+    } catch (error) {
+      console.error("Failed to delete appliance", error);
+    }
+  }
+};
+
+const resetForm = () => {
+  currentAppliance.value = {
+    id: null,
+    name: "",
+    nominal_power_watts: "",
+    state: "on",
+    operating_hours: "",
+  };
+  isEditing.value = false;
+};
+
+onMounted(() => {
+  appliancesStore.fetchAppliances();
+});
 </script>
+
+
 
 <style scoped lang="scss">
 .appliances-container {
