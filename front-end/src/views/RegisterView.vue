@@ -52,6 +52,30 @@
                 </div>
 
                 <div class="mb-4">
+                  <label for="phoneNumber" class="form-label">Phone Number</label>
+                  <input
+                    type="tel"
+                    class="form-control auth-input"
+                    id="phoneNumber"
+                    v-model="phoneNumber"
+                    placeholder="+351 912 345 678"
+                    required
+                  />
+                </div>
+
+                <div class="mb-4">
+                  <label for="nif" class="form-label">NIF</label>
+                  <input
+                    type="text"
+                    class="form-control auth-input"
+                    id="nif"
+                    v-model="nif"
+                    placeholder="Número de Identificação Fiscal"
+                    required
+                  />
+                </div>
+
+                <div class="mb-4">
                   <label for="password" class="form-label">Password</label>
                   <input
                     type="password"
@@ -93,7 +117,6 @@
                   </label>
                 </div>
 
-
                 <button
                   type="submit"
                   class="btn btn-primary btn-lg w-100 py-3 shadow mb-3"
@@ -119,7 +142,59 @@
 </template>
 
 <script setup>
+import { ref } from 'vue'
+import { useRouter } from 'vue-router'
+import { useAuthStore } from '../stores/authStore'
 
+const firstName = ref('')
+const lastName = ref('')
+const email = ref('')
+const password = ref('')
+const confirmPassword = ref('')
+const agreeTerms = ref(false)
+const loading = ref(false)
+const errorMessage = ref('')
+const router = useRouter()
+const authStore = useAuthStore()
+
+const handleRegister = async () => {
+  errorMessage.value = ''
+  
+  if (password.value !== confirmPassword.value) {
+    errorMessage.value = 'Passwords do not match'
+    return
+  }
+
+  loading.value = true
+
+  try {
+    await authStore.register({
+      firstName: firstName.value,
+      lastName: lastName.value,
+      email: email.value,
+      password: password.value
+    })
+    router.push('/dashboard')
+  } catch (error) {
+    console.error('Registration failed:', error)
+    
+    if (error.response) {
+      if (error.response.status === 400) {
+        errorMessage.value = error.response.data?.message || 'Validation error'
+      } else if (error.response.status === 409) {
+        errorMessage.value = 'Email already exists'
+      } else {
+        errorMessage.value = error.response.data?.message || 'Registration failed'
+      }
+    } else if (error.request) {
+      errorMessage.value = 'Network error. Please check your connection.'
+    } else {
+      errorMessage.value = 'An unexpected error occurred'
+    }
+  } finally {
+    loading.value = false
+  }
+}
 </script>
 
 <style scoped>

@@ -54,14 +54,14 @@
                   </div>
                 </div>
 
-                <router-link to="/dashboard">
+                <!-- <router-link to="/dashboard"> -->
                   <button
                     type="submit"
                     class="btn btn-primary btn-lg w-100 py-3 shadow mb-3"
                   >
                     <i class="fas fa-sign-in-alt me-2"></i> Login
                   </button>
-                </router-link>
+                <!-- </router-link> -->
 
                 <div class="text-center mt-4">
                   <p>
@@ -83,33 +83,34 @@
 <script setup>
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { useAuthStore } from '../stores/authStore' 
-import users from '../api/users' 
+import { useAuthStore } from '../stores/authStore'
 
 const email = ref('')
 const password = ref('')
 const rememberMe = ref(false)
 const loading = ref(false)
-const errorMessage = ref('') // Add error message ref
+const errorMessage = ref('')
 const router = useRouter()
 const authStore = useAuthStore()
 
 const handleLogin = async () => {
-  errorMessage.value = '' // Reset error message
+  errorMessage.value = ''
   loading.value = true
 
-  try { 
-   const user =  await users.login({
+  try {
+    await authStore.login({
       email: email.value,
       password: password.value
-    }) 
-    console.log(user.data);
-    // router.push('/dashboard')
+    })
+    
+    // Get the redirect query parameter if it exists
+    const redirect = router.currentRoute.value.query.redirect
+    // Redirect to the specified path or fallback to '/dashboard'
+    router.push(redirect || '/dashboard')
   } catch (error) {
     console.error('Login failed:', error)
     
     if (error.response) {
-      // The request was made and the server responded with a status code
       if (error.response.status === 401) {
         errorMessage.value = 'Invalid email or password'
       } else if (error.response.status === 500) {
@@ -118,10 +119,8 @@ const handleLogin = async () => {
         errorMessage.value = error.response.data?.message || 'Login failed'
       }
     } else if (error.request) {
-      // The request was made but no response was received
       errorMessage.value = 'Network error. Please check your connection.'
     } else {
-      // Something happened in setting up the request
       errorMessage.value = 'An unexpected error occurred'
     }
   } finally {

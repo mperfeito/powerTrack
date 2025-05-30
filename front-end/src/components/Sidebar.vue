@@ -33,6 +33,8 @@
 </template>
 
 <script>
+import { useAuthStore } from '@/stores/authStore';
+
 export default {
   data() {
     return {
@@ -55,8 +57,27 @@ export default {
     navigateTo(path) {
       this.$router.push(path)
     },
-    logout() {
-      console.log('Logout initiated')
+    async logout() {
+      // Optional: Add confirmation dialog
+      if (!confirm('Are you sure you want to log out?')) {
+        return;
+      }
+      
+      try {
+        const authStore = useAuthStore();
+        
+        // Clear authentication state
+        await authStore.clearAuth();
+        
+        // Redirect to login page using $router
+        this.$router.push('/login'); // Or your initial view route
+        
+        // Optional: Show success message
+        console.log('Logout successful');
+      } catch (error) {
+        console.error('Logout failed:', error);
+        // Optional: Show error message to user
+      }
     }
   }
 }

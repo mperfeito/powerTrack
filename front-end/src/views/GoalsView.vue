@@ -142,51 +142,18 @@
 
 <script setup>
 import Sidebar from "@/components/Sidebar.vue";
-import { ref, computed } from "vue";
+import { computed, onMounted } from "vue";
+import { useGoalsStore } from "@/stores/goalsStore";
 
-const goals = ref([
-  {
-    id: 1,
-    targetValue: 500,
-    period: "monthly",
-    startDate: "2023-06-01",
-    endDate: "2023-06-30",
-    currentValue: 320
-  },
-  {
-    id: 2,
-    targetValue: 50,
-    period: "daily",
-    startDate: "2023-06-15",
-    endDate: "2023-06-15",
-    currentValue: 42
-  },
-  {
-    id: 3,
-    targetValue: 1500,
-    period: "yearly",
-    startDate: "2023-01-01",
-    endDate: "2023-12-31",
-    currentValue: 850
-  }
-]);
+// Initialize the store
+const store = useGoalsStore();
 
-const isEditing = ref(false);
-const currentGoal = ref({
-  id: null,
-  targetValue: "",
-  period: "monthly",
-  startDate: "",
-  endDate: "",
-  currentValue: 0
+// Fetch goals when component mounts
+onMounted(async () => {
+  await store.fetchGoals();
 });
 
-const isGoalValid = computed(() => {
-  return currentGoal.value.targetValue > 0 && 
-         currentGoal.value.startDate && 
-         currentGoal.value.endDate;
-});
-
+// Format functions remain the same
 const formatDate = (dateString) => {
   return new Date(dateString).toLocaleDateString('en-US', { 
     month: 'short', day: 'numeric' 
@@ -197,50 +164,43 @@ const formatPeriod = (period) => {
   return period.charAt(0).toUpperCase() + period.slice(1);
 };
 
+// Calculate progress using store's method
 const calculateProgress = (goal) => {
-  return Math.min(Math.round((goal.currentValue / goal.targetValue) * 100), 100);
+  return store.calculateProgress(goal);
 };
 
+// Edit goal - use store's action
 const editGoal = (goal) => {
-  currentGoal.value = { ...goal };
-  isEditing.value = true;
+  store.setCurrentGoal(goal);
   window.scrollTo({ top: 0, behavior: 'smooth' });
 };
 
-const saveGoal = () => {
-  if (isEditing.value) {
-    const index = goals.value.findIndex(g => g.id === currentGoal.value.id);
-    if (index !== -1) {
-      goals.value[index] = { ...currentGoal.value };
-    }
+// Save goal - use store's action
+const saveGoal = async () => {
+  if (store.isEditing) {
+    await store.updateGoal();
   } else {
-    const newId = Math.max(...goals.value.map(g => g.id), 0) + 1;
-    goals.value.push({
-      ...currentGoal.value,
-      id: newId,
-      currentValue: 0
-    });
+    await store.createGoal(store.currentGoal);
   }
-  resetForm();
 };
 
+// Delete goal - use store's action
 const deleteGoal = (id) => {
   if (confirm('Are you sure you want to delete this goal?')) {
-    goals.value = goals.value.filter(g => g.id !== id);
+    store.deleteGoal(id);
   }
 };
 
+// Reset form - use store's action
 const resetForm = () => {
-  currentGoal.value = {
-    id: null,
-    targetValue: "",
-    period: "monthly",
-    startDate: "",
-    endDate: "",
-    currentValue: 0
-  };
-  isEditing.value = false;
+  store.resetCurrentGoal();
 };
+
+// Computed properties to access store state
+const goals = computed(() => store.goals);
+const currentGoal = computed(() => store.currentGoal);
+const isEditing = computed(() => store.isEditing);
+const isGoalValid = computed(() => store.isGoalValid);
 </script>
 
 <style scoped lang="scss">

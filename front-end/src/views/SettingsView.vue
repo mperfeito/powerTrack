@@ -9,7 +9,13 @@
         </h2>
       </div>
 
-      <div class="settings-content">
+      <div v-if="loading" class="text-center py-5">
+        <div class="spinner-border text-primary" role="status">
+          <span class="visually-hidden">Loading...</span>
+        </div>
+      </div>
+
+      <div v-else class="settings-content">
         <div class="settings-card p-4 mb-4">
           <h5 class="text-dark mb-4">
             <i class="fas fa-user-circle me-2" style="color: #467054;"></i> Profile Information
@@ -21,7 +27,7 @@
               <input
                 type="text"
                 class="form-control settings-input"
-                v-model="user.firstName"
+                v-model="user.first_name"
                 placeholder="John"
               />
             </div>
@@ -30,7 +36,7 @@
               <input
                 type="text"
                 class="form-control settings-input"
-                v-model="user.lastName"
+                v-model="user.last_name"
                 placeholder="Doe"
               />
             </div>
@@ -41,6 +47,7 @@
                 class="form-control settings-input"
                 v-model="user.email"
                 placeholder="john@example.com"
+                disabled
               />
             </div>
             <div class="col-md-6">
@@ -48,7 +55,7 @@
               <input
                 type="tel"
                 class="form-control settings-input"
-                v-model="user.phone"
+                v-model="user.phone_number"
                 placeholder="+351 123 456 789"
               />
             </div>
@@ -65,6 +72,7 @@
             <input
               type="password"
               class="form-control settings-input"
+              v-model="password.current"
               placeholder="Enter current password"
             />
           </div>
@@ -74,6 +82,7 @@
             <input
               type="password"
               class="form-control settings-input"
+              v-model="password.new"
               placeholder="Enter new password"
             />
           </div>
@@ -83,17 +92,19 @@
             <input
               type="password"
               class="form-control settings-input"
+              v-model="password.confirm"
               placeholder="Confirm new password"
             />
           </div>
         </div>
 
         <div class="d-flex justify-content-end mt-4">
-          <button class="btn btn-outline-secondary me-2">
+          <button class="btn btn-outline-secondary me-2" @click="resetForm">
             Cancel
           </button>
-          <button class="btn btn-primary" @click="saveSettings">
-            Save Changes
+          <button class="btn btn-primary" @click="saveSettings" :disabled="saving">
+            <span v-if="saving" class="spinner-border spinner-border-sm me-1"></span>
+            {{ saving ? 'Saving...' : 'Save Changes' }}
           </button>
         </div>
       </div>
@@ -102,26 +113,92 @@
 </template>
 
 <script setup>
-import Sidebar from "@/components/Sidebar.vue";
-import { ref } from "vue";
+import Sidebar from "../components/Sidebar.vue"; 
+import { ref, onMounted } from "vue";
+import { useAuthStore } from "../stores/authStore";  
+import axios from "axios";  
+
+const authStore = useAuthStore();
+const loading = ref(true);
+const saving = ref(false);
 
 const user = ref({
-  firstName: "John",
-  lastName: "Doe",
-  email: "john@example.com",
-  phone: "+351 123 456 789"
+  first_name: "",
+  last_name: "",
+  email: "",
+  phone_number: ""
 });
 
-const settings = ref({
-  energyAlerts: true,
-  goalNotifications: true,
-  peakAlerts: true
+const password = ref({
+  current: "",
+  new: "",
+  confirm: ""
 });
 
-const saveSettings = () => {
+// Fetch user data 
+onMounted(async () => {
+  try {
+    if (authStore.user) {
+      user.value = { 
+        first_name: authStore.user.first_name,
+        last_name: authStore.user.last_name,
+        email: authStore.user.email,
+        phone_number: authStore.user.phone_number 
+      };
+    } else {
+      await authStore.fetchUser();
+      user.value = { 
+        first_name: authStore.user.first_name,
+        last_name: authStore.user.last_name,
+        email: authStore.user.email,
+        phone_number: authStore.user.phone_number 
+      };
+    }
+    loading.value = false;
+  } catch (error) {
+    console.error("Error loading user data:", error);
+  }
+});
 
-  console.log("Settings saved", user.value, settings.value);
+const saveSettings = async () => {
+  saving.value = true;
+  
+  try {
+    const updateData = {
+      first_name: user.value.first_name,
+      last_name: user.value.last_name,
+      phone_number: user.value.phone_number
+    };
+    if (password.value.new) {
+      if (password.value.new !== password.value.confirm) {
+        throw new Error("New passwords don't match");
+      }
+      updateData.password = password.value.new;
+      updateData.currentPassword = password.value.current;
+    }
+    const response = await axios.put("/auth/user", updateData);
+    authStore.user = { ...authStore.user, ...updateData };
+    password.value = { current: "", new: "", confirm: "" };
+    
+    alert("Settings updated successfully!");
+  } catch (error) {
+    console.error("Update error:", error);
+    alert(error.response?.data?.error || error.message || "Update failed");
+  } finally {
+    saving.value = false;
+  }
 };
+
+const resetForm = () => {
+  user.value = {
+    first_name: authStore.user.first_name,
+    last_name: authStore.user.last_name,
+    email: authStore.user.email,
+    phone_number: authStore.user.phone_number
+  };
+  password.value = { current: "", new: "", confirm: "" };
+};
+  
 </script>
 
 <style scoped lang="scss">
