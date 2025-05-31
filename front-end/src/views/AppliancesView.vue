@@ -26,7 +26,7 @@
             <input
               type="text"
               class="form-control settings-input"
-              v-model="currentAppliance.name"
+              v-model="currentAppliance.type"
               placeholder="e.g. Air Conditioner"
               @keyup.enter="saveAppliance"
             />
@@ -59,10 +59,11 @@
             <input
               type="number"
               class="form-control settings-input"
-              v-model="currentAppliance.operating_hours"
+              v-model="currentAppliance.avg_operating_hours"
               placeholder="5"
               min="0"
               max="24"
+              required
             />
           </div>
 
@@ -70,7 +71,7 @@
             <button
               class="btn btn-primary w-100"
               @click="saveAppliance"
-              :disabled="!currentAppliance.name"
+              :disabled="!currentAppliance.type"
             >
               <i class="fas fa-save me-1"></i>
               {{ isEditing ? "Update" : "Add" }}
@@ -80,15 +81,17 @@
       </div>
 
     
+    <!-- APPLIANCES LIST -->
       <div class="appliance-list-horizontal">
+        <!-- Appliance Card -->
         <div
           class="appliance-card-horizontal"
           v-for="appliance in appliancesStore.appliances"
-          :key="appliance.id"
+          :key="appliance.id_appliance || appliance.id"
         >
           <div class="appliance-info">
             <div class="appliance-header">
-              <h5 class="text-dark m-0">{{ appliance.name }}</h5>
+              <h5 class="text-dark m-0">{{ appliance.type }}</h5>
               <span class="status-badge" :class="appliance.state">
                 <i class="fas" :class="stateIcon(appliance.state)"></i>
                 {{ appliance.state }}
@@ -102,7 +105,7 @@
               </div>
               <div class="spec-item">
                 <i class="fas fa-clock me-2" style="color: #467054"></i>
-                <span>{{ appliance.operating_hours }}h/day</span>
+                <span>{{ appliance.avg_operating_hours || appliance.operating_hours || 0 }}h/day</span>
               </div>
             </div>
           </div>
@@ -114,6 +117,7 @@
             <div class="consumption-label">Daily Consumption</div>
           </div>
 
+          <!-- EDIT Button -->
           <div class="appliance-actions">
             <button
               class="btn btn-icon"
@@ -122,19 +126,130 @@
             >
               <i class="fas fa-edit"></i>
             </button>
+
+            <!-- DELETE Button -->
             <button
               class="btn btn-icon btn-danger"
-              @click="deleteAppliance(appliance.id)"
+              @click="deleteAppliance(appliance.id_appliance)"
               title="Delete"
             >
               <i class="fas fa-trash-alt"></i>
             </button>
+            
           </div>
         </div>
       </div>
     </div>
   </div>
 </template>
+
+
+<script setup>
+import Sidebar from "@/components/Sidebar.vue";
+import { ref, onMounted } from "vue";
+import { useAppliancesStore } from "@/stores/appliancesStore";
+
+// Import the Appliances Store
+const appliancesStore = useAppliancesStore();
+
+
+const isEditing = ref(false);
+const currentAppliance = ref({
+  id: null,
+  type: "",                    // substitui 'name' por 'type'
+  nominal_power_watts: "",
+  state: "on",
+  avg_operating_hours: ""
+});
+
+
+// Create or Update Appliance - Save it
+const saveAppliance = async () => {
+  try {
+    const applianceData = {
+      type: currentAppliance.value.type,
+      state: currentAppliance.value.state,
+      avg_operating_hours: currentAppliance.value.avg_operating_hours,
+      nominal_power_watts: currentAppliance.value.nominal_power_watts
+    };
+
+    if (isEditing.value) {
+      await appliancesStore.updateAppliance({
+        ...applianceData,
+        id: currentAppliance.value.id
+      });
+    } else {
+      await appliancesStore.createAppliance(applianceData);
+    }
+
+    resetForm();
+  } catch (error) {
+    console.error("Error saving appliance:", error);
+    alert(appliancesStore.error || "Failed to save appliance");
+  }
+};
+
+// Reset Form to go back to original state
+const resetForm = () => {
+  currentAppliance.value = {
+    id: null,
+    type: "",
+    nominal_power_watts: "",
+    state: "on",
+    operating_hours: "",
+  };
+  isEditing.value = false;
+};
+
+// Edit Appliance
+const editAppliance = (appliance) => {
+  currentAppliance.value = {
+    id: appliance.id_appliance || appliance.id,  // garante pegar o id certo
+    type: appliance.type,
+    nominal_power_watts: appliance.nominal_power_watts,
+    state: appliance.state,
+    avg_operating_hours: appliance.avg_operating_hours || appliance.operating_hours || "",
+  };
+  isEditing.value = true;
+  window.scrollTo({ top: 0, behavior: "smooth" });
+};
+
+// Delete Appliance
+const deleteAppliance = async (id) => {
+  if (confirm("Are you sure you want to delete this appliance?")) {
+    try {
+      await appliancesStore.deleteAppliance(id);
+      await appliancesStore.fetchAppliances();
+    } catch (error) {
+      console.error("Erro ao remover aparelho:", error);
+      alert(appliancesStore.error || "Erro ao remover aparelho");
+    }
+  }
+};
+
+// Fetch Appliances
+onMounted(() => {
+  appliancesStore.fetchAppliances();
+  console.log("Appliances cadastrados:", appliancesStore.appliances);
+});
+
+// Appliance State Icons
+const stateIcon = (state) => {
+  return {
+    on: "fa-power-off text-success",
+    off: "fa-toggle-off text-danger",
+    standby: "fa-pause-circle text-warning",
+  }[state];
+};
+
+// Calculate Daily Consumption with the nominal_power_watts value inserted
+const calculateDailyConsumption = (appliance) => {
+  const hours = appliance.avg_operating_hours || appliance.operating_hours || 0;
+  const watts = appliance.nominal_power_watts || 0;
+  return watts * hours;
+};
+
+</script>
 
 <!-- <script setup>
 import Sidebar from "@/components/Sidebar.vue";
@@ -226,81 +341,6 @@ const resetForm = () => {
   isEditing.value = false;
 };
 </script> -->
-
-<script setup>
-import Sidebar from "@/components/Sidebar.vue";
-import { ref, onMounted } from "vue";
-import { useAppliancesStore } from "@/stores/appliancesStore";
-
-const appliancesStore = useAppliancesStore();
-
-const isEditing = ref(false);
-const currentAppliance = ref({
-  id: null,
-  name: "",
-  nominal_power_watts: "",
-  state: "on",
-  operating_hours: "",
-});
-
-const stateIcon = (state) => {
-  return {
-    on: "fa-power-off text-success",
-    off: "fa-toggle-off text-danger",
-    standby: "fa-pause-circle text-warning",
-  }[state];
-};
-
-const calculateDailyConsumption = (appliance) => {
-  return appliance.nominal_power_watts * appliance.operating_hours;
-};
-
-const editAppliance = (appliance) => {
-  currentAppliance.value = { ...appliance };
-  isEditing.value = true;
-  window.scrollTo({ top: 0, behavior: "smooth" });
-};
-
-const saveAppliance = async () => {
-  try {
-    if (isEditing.value) {
-      await appliancesStore.updateAppliance(currentAppliance.value);
-    } else {
-      await appliancesStore.createAppliance(currentAppliance.value);
-    }
-    resetForm();
-  } catch (error) {
-    console.error("Erro ao salvar aparelho:", error);
-    alert("Não foi possível salvar o aparelho.");
-  }
-};
-
-const deleteAppliance = async (id) => {
-  if (confirm("Are you sure you want to delete this appliance?")) {
-    try {
-      await appliancesStore.deleteAppliance(id);
-    } catch (error) {
-      console.error("Failed to delete appliance", error);
-    }
-  }
-};
-
-const resetForm = () => {
-  currentAppliance.value = {
-    id: null,
-    name: "",
-    nominal_power_watts: "",
-    state: "on",
-    operating_hours: "",
-  };
-  isEditing.value = false;
-};
-
-onMounted(() => {
-  appliancesStore.fetchAppliances();
-});
-</script>
-
 
 
 <style scoped lang="scss">

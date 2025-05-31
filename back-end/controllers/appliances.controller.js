@@ -1,4 +1,3 @@
-
 import * as appliancesModel from "../models/appliances.model.js";
 import { getActiveHouse } from "../models/houses.model.js";
 
@@ -50,7 +49,6 @@ export const createAppliance = async (req, res) => {
       });
     }
 
-  
     const existingAppliance = await appliancesModel.getApplianceByType(id_house, type);
 
     if (existingAppliance) {
@@ -76,6 +74,7 @@ export const createAppliance = async (req, res) => {
 
 
 export const deleteAppliance = async (req, res) => {
+  console.log("ID recebido:", req.params.id_appliance);
   try {
     const { id_house } = await getActiveHouse(req.user.id_user);
     const { id_appliance } = req.params;
@@ -90,6 +89,37 @@ export const deleteAppliance = async (req, res) => {
     res.status(204).json({});
   } catch (err) {
     console.error("Error deleting appliance:", err);
+    return res.status(500).json({ errorMessage: "Internal server error" });
+  }
+};
+
+export const updateAppliance = async (req, res) => {
+  try {
+    const { id_house } = await getActiveHouse(req.user.id_user);
+    const { id_appliance } = req.params;
+    const updates = req.body;
+
+    if (!updates || Object.keys(updates).length === 0) {
+      return res.status(400).json({ errorMessage: "No fields provided for update" });
+    }
+
+    const allowedFields = ["type", "state", "avg_operating_hours", "nominal_power_watts"];
+    const invalidFields = Object.keys(updates).filter(f => !allowedFields.includes(f));
+    if (invalidFields.length > 0) {
+      return res.status(400).json({ errorMessage: `Invalid fields in update: ${invalidFields.join(", ")}` });
+    }
+
+    const result = await appliancesModel.updateAppliance(id_house, id_appliance, updates);
+
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ errorMessage: "Appliance not found" });
+    }
+
+    const updatedAppliance = await appliancesModel.getApplianceById(id_house, id_appliance);
+
+    res.status(200).json({ message: "Appliance updated successfully", appliance: updatedAppliance });
+  } catch (err) {
+    console.error("Error patching appliance:", err);
     return res.status(500).json({ errorMessage: "Internal server error" });
   }
 };

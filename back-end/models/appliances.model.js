@@ -77,3 +77,27 @@ export const getApplianceByType = async (id_house, type) => {
     throw err;
   }
 };
+
+export const updateAppliance = async (id_house, id_appliance, updates) => {
+  try {
+    const fields = [];
+    const values = [];
+
+    for (const key in updates) {
+      const dbField = key === 'avg_operating_hours' ? 'operating_hours' : key;
+      fields.push(`${dbField} = ?`);
+      values.push(updates[key]);
+    }
+
+    values.push(id_house, id_appliance);
+
+    const sql = `UPDATE appliances SET ${fields.join(", ")} WHERE id_house = ? AND id_appliance = ?`;
+
+    const [result] = await db.execute(sql, values);
+
+    return result;
+  } catch (err) {
+    console.error("Error updating appliance partially:", err);
+    throw err;
+  }
+};

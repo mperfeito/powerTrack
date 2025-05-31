@@ -37,6 +37,7 @@
         </div>
 
      
+        <!-- TOP CONSUMING DEVICE -->
         <div class="widget-card top-device medium-widget">
           <div class="widget-header">
             <h5 class="text-dark">
@@ -155,6 +156,7 @@
 <script setup>
 import Sidebar from "@/components/Sidebar.vue";
 </script>
+
 
 <style scoped lang="scss">
 .dashboard-container {
