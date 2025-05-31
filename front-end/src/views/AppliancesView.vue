@@ -156,7 +156,7 @@ const appliancesStore = useAppliancesStore();
 const isEditing = ref(false);
 const currentAppliance = ref({
   id: null,
-  type: "",                    // substitui 'name' por 'type'
+  type: "", 
   nominal_power_watts: "",
   state: "on",
   avg_operating_hours: ""
@@ -204,7 +204,7 @@ const resetForm = () => {
 // Edit Appliance
 const editAppliance = (appliance) => {
   currentAppliance.value = {
-    id: appliance.id_appliance || appliance.id,  // garante pegar o id certo
+    id: appliance.id_appliance || appliance.id,
     type: appliance.type,
     nominal_power_watts: appliance.nominal_power_watts,
     state: appliance.state,
@@ -221,8 +221,8 @@ const deleteAppliance = async (id) => {
       await appliancesStore.deleteAppliance(id);
       await appliancesStore.fetchAppliances();
     } catch (error) {
-      console.error("Erro ao remover aparelho:", error);
-      alert(appliancesStore.error || "Erro ao remover aparelho");
+        console.error("Error removing appliance:", error);
+        alert(appliancesStore.error || "Error removing appliance");
     }
   }
 };
@@ -230,7 +230,6 @@ const deleteAppliance = async (id) => {
 // Fetch Appliances
 onMounted(() => {
   appliancesStore.fetchAppliances();
-  console.log("Appliances cadastrados:", appliancesStore.appliances);
 });
 
 // Appliance State Icons
@@ -250,98 +249,6 @@ const calculateDailyConsumption = (appliance) => {
 };
 
 </script>
-
-<!-- <script setup>
-import Sidebar from "@/components/Sidebar.vue";
-import { ref } from "vue";
-
-const appliances = ref([
-  {
-    id: 1,
-    name: "Smart TV",
-    nominal_power_watts: 120,
-    state: "standby",
-    operating_hours: 5,
-  },
-  {
-    id: 2,
-    name: "Refrigerator",
-    nominal_power_watts: 200,
-    state: "on",
-    operating_hours: 24,
-  },
-  {
-    id: 3,
-    name: "Washing Machine",
-    nominal_power_watts: 800,
-    state: "off",
-    operating_hours: 1,
-  },
-]);
-
-const isEditing = ref(false);
-const currentAppliance = ref({
-  id: null,
-  name: "",
-  nominal_power_watts: "",
-  state: "on",
-  operating_hours: "",
-});
-
-const stateIcon = (state) => {
-  return {
-    on: "fa-power-off text-success", 
-    off: "fa-toggle-off text-danger", 
-    standby: "fa-pause-circle text-warning", 
-  }[state];
-};
-
-const calculateDailyConsumption = (appliance) => {
-  return appliance.nominal_power_watts * appliance.operating_hours;
-};
-
-const editAppliance = (appliance) => {
-  currentAppliance.value = { ...appliance };
-  isEditing.value = true;
-  window.scrollTo({ top: 0, behavior: "smooth" });
-};
-
-const saveAppliance = () => {
-  if (isEditing.value) {
-    const index = appliances.value.findIndex(
-      (a) => a.id === currentAppliance.value.id
-    );
-    if (index !== -1) {
-      appliances.value[index] = { ...currentAppliance.value };
-    }
-  } else {
-    const newId = Math.max(...appliances.value.map((a) => a.id), 0) + 1;
-    appliances.value.push({
-      ...currentAppliance.value,
-      id: newId,
-    });
-  }
-  resetForm();
-};
-
-const deleteAppliance = (id) => {
-  if (confirm("Are you sure you want to delete this appliance?")) {
-    appliances.value = appliances.value.filter((a) => a.id !== id);
-  }
-};
-
-const resetForm = () => {
-  currentAppliance.value = {
-    id: null,
-    name: "",
-    nominal_power_watts: "",
-    state: "on",
-    operating_hours: "",
-  };
-  isEditing.value = false;
-};
-</script> -->
-
 
 <style scoped lang="scss">
 .appliances-container {

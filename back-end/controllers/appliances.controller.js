@@ -72,27 +72,6 @@ export const createAppliance = async (req, res) => {
   }
 };
 
-
-export const deleteAppliance = async (req, res) => {
-  console.log("ID recebido:", req.params.id_appliance);
-  try {
-    const { id_house } = await getActiveHouse(req.user.id_user);
-    const { id_appliance } = req.params;
-    const result = await appliancesModel.deleteAppliance(id_house, id_appliance);
-
-    if (result.affectedRows === 0) {
-      return res.status(404).json({
-        errorMessage: "The requested resource could not be found on the server",
-      });
-    }
-
-    res.status(204).json({});
-  } catch (err) {
-    console.error("Error deleting appliance:", err);
-    return res.status(500).json({ errorMessage: "Internal server error" });
-  }
-};
-
 export const updateAppliance = async (req, res) => {
   try {
     const { id_house } = await getActiveHouse(req.user.id_user);
@@ -120,6 +99,26 @@ export const updateAppliance = async (req, res) => {
     res.status(200).json({ message: "Appliance updated successfully", appliance: updatedAppliance });
   } catch (err) {
     console.error("Error patching appliance:", err);
+    return res.status(500).json({ errorMessage: "Internal server error" });
+  }
+};
+
+export const deleteAppliance = async (req, res) => {
+  console.log("ID recebido:", req.params.id_appliance);
+  try {
+    const { id_house } = await getActiveHouse(req.user.id_user);
+    const { id_appliance } = req.params;
+    const result = await appliancesModel.deleteAppliance(id_house, id_appliance);
+
+    if (result.affectedRows === 0) {
+      return res.status(404).json({
+        errorMessage: "The requested resource could not be found on the server",
+      });
+    }
+
+    res.status(204).json({});
+  } catch (err) {
+    console.error("Error deleting appliance:", err);
     return res.status(500).json({ errorMessage: "Internal server error" });
   }
 };

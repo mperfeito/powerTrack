@@ -17,9 +17,9 @@ export const useAppliancesStore = defineStore('appliances', {
     try {
         const response = await appliancesApi.getAllAppliances();
         this.appliances = response.data.appliances || response.data;
-        console.log("Dados recebidos:", this.appliances);
+        console.log("Data received:", this.appliances);
     } catch (err) {
-        console.error("Erro ao buscar appliances:", err);
+        console.error("Error fetching appliances:", err);
     } finally {
         this.loading = false;
     }
@@ -43,7 +43,7 @@ async createAppliance(applianceData) {
 
   } catch (err) {
     this.error = err.response?.status === 409
-      ? `Já existe um aparelho com o tipo "${applianceData.type}"`
+      ? `An appliance with type "${applianceData.type}" already exists`
       : err.response?.data?.errorMessage || "Erro ao criar aparelho";
     throw err;
   } finally {
@@ -68,7 +68,7 @@ async updateAppliance(applianceData) {
     await this.fetchAppliances();
   } catch (err) {
     this.error = err.response?.status === 409
-      ? `Já existe um aparelho com o tipo "${applianceData.type}"`
+      ? `An appliance with type "${applianceData.type}" already exists`
       : err.response?.data?.errorMessage || err.message;
     throw err;
   } finally {
@@ -80,7 +80,7 @@ async updateAppliance(applianceData) {
   // Delete Appliance
 async deleteAppliance(id) {
   if (!id) {
-    throw new Error("ID inválido para exclusão");
+    throw new Error("Invalid ID for deletion");
   }
 
   this.loading = true;
@@ -88,11 +88,10 @@ async deleteAppliance(id) {
   
   try {
     await appliancesApi.deleteAppliance(id);
-    // Remove localmente sem recarregar tudo
     this.appliances = this.appliances.filter(a => a.id !== id);
   } catch (err) {
     this.error = err.response?.data?.errorMessage || err.message;
-    console.error("Erro na exclusão:", {
+    console.error("Error during deletion:", {
       id,
       status: err.response?.status,
       data: err.response?.data
