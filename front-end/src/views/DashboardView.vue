@@ -37,37 +37,47 @@
         </div>
 
      
-        <div class="widget-card top-device medium-widget">
-          <div class="widget-header">
-            <h5 class="text-dark">
-              <i class="fas fa-plug me-2" style="color: #467054;"></i> Top Consuming Device
-            </h5>
-          </div>
-          <div class="widget-content">
-            <div class="device-info">
-              <div class="device-icon" style="background-color: #dfb046; color: white;">
-                <i class="fas fa-air-conditioner"></i>
+        <!-- TOP CONSUMING DEVICE -->
+        <div class="widget-card top-device medium-widget" v-if="topDevice">
+            <div class="widget-header">
+              <h5 class="text-dark">
+                <i class="fas fa-plug me-2" style="color: #467054;"></i> Top Consuming Device
+              </h5>
+            </div>
+            <div class="widget-content">
+              <div class="device-info">
+                <div class="device-icon" style="background-color: #dfb046; color: white;">
+                  <i class="fas fa-plug"></i>
+                </div>
+                <div>
+                  <h6 class="text-dark mb-1">{{ topDevice.type }}</h6>
+                  <p class="text-secondary mb-0">
+                    <span style="color: #467054;">{{ topDeviceConsumptionKW }} kW</span>
+                    ({{ topDevicePercentage }}% of total)
+                  </p>
+                </div>
               </div>
-              <div>
-                <h6 class="text-dark mb-1">AC Living Room</h6>
-                <p class="text-secondary mb-0"><span style="color: #467054;">1.2 kW</span> (48% of total)</p>
+
+              <div class="progress mt-3">
+                <div
+                  class="progress-bar"
+                  :style="{ width: topDevicePercentage + '%', backgroundColor: '#467054' }"
+                ></div>
+              </div>
+
+              <div class="device-list mt-3">
+                <div
+                  v-for="device in otherDevices"
+                  :key="device.id"
+                  class="d-flex justify-content-between py-2 border-bottom"
+                >
+                  <span>{{ device.type }}</span>
+                  <span style="color: #467054;">{{ (device.dailyConsumption / 1000).toFixed(1) }} kW</span>
+                </div>
               </div>
             </div>
-            <div class="progress mt-3">
-              <div class="progress-bar" style="width: 48%; background-color: #467054;"></div>
-            </div>
-            <div class="device-list mt-3">
-              <div class="d-flex justify-content-between py-2 border-bottom">
-                <span>Refrigerator</span>
-                <span style="color: #467054;">0.8 kW</span>
-              </div>
-              <div class="d-flex justify-content-between py-2 border-bottom">
-                <span>Lighting</span>
-                <span style="color: #467054;">0.4 kW</span>
-              </div>
-            </div>
-          </div>
         </div>
+
 
         <div class="widget-card goal-comparison medium-widget">
           <div class="widget-header">
@@ -154,7 +164,47 @@
 
 <script setup>
 import Sidebar from "@/components/Sidebar.vue";
+import { useAppliancesStore } from "@/stores/appliancesStore";
+import { onMounted, computed } from "vue";
+
+const appliancesStore = useAppliancesStore();
+
+onMounted(() => {
+  appliancesStore.fetchAppliances();
+});
+
+// Sort appliances by consumption
+const sortedAppliances = computed(() => {
+  return appliancesStore.appliances
+    .map(appliance => ({
+      ...appliance,
+      dailyConsumption: (appliance.nominal_power_watts || 0) * (appliance.avg_operating_hours || appliance.operating_hours || 0)
+    }))
+    .sort((a, b) => b.dailyConsumption - a.dailyConsumption);
+});
+
+// Top consuming appliance
+const topDevice = computed(() => sortedAppliances.value[0]);
+
+// Other appliances (excluding the top one)
+const otherDevices = computed(() => sortedAppliances.value.slice(1, 5));
+
+// Total daily consumption
+const totalConsumption = computed(() =>
+  sortedAppliances.value.reduce((acc, device) => acc + device.dailyConsumption, 0)
+);
+
+// Daily consumption of the top device in kW
+const topDeviceConsumptionKW = computed(() => (topDevice.value?.dailyConsumption || 0) / 1000);
+
+// Percentage of total consumption for the top device
+const topDevicePercentage = computed(() => {
+  if (!totalConsumption.value || !topDevice.value) return 0;
+  return ((topDevice.value.dailyConsumption / totalConsumption.value) * 100).toFixed(0);
+});
 </script>
+
+
 
 <style scoped lang="scss">
 .dashboard-container {
