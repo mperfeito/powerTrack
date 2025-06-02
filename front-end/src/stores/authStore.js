@@ -23,15 +23,18 @@ export const useAuthStore = defineStore('auth', {
     },
 
     async register(userData) {
+      console.log("[DEBUG] Sending registration payload:", userData); // Add this
       try {
-        const response = await api.post('/register', userData)
-        this.token = response.data.token
-        localStorage.setItem('token', this.token)
-        await this.fetchUser()
-        return true
+        const response = await api.post('/users', userData);
+        console.log("[DEBUG] Registration success:", response.data); // Add this
+        this.token = response.data.token;
+        localStorage.setItem('token', this.token);
+        await this.fetchUser();
+        return true;
       } catch (error) {
-        this.clearAuth()
-        throw error
+        console.error("[DEBUG] Registration failed:", error.response?.data || error.message); // Add this
+        this.clearAuth();
+        throw error;
       }
     },
 
@@ -41,6 +44,15 @@ export const useAuthStore = defineStore('auth', {
         this.user = response.data
       } catch (error) {
         this.clearAuth()
+        throw error
+      }
+    }, 
+
+    async updateUser(data) {  
+      try {
+        const response = await api.patch('/users/me', data)
+        this.user = { ...this.user, ...response.data }
+      } catch (error) {
         throw error
       }
     },

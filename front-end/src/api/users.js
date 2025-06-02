@@ -16,8 +16,8 @@ export default {
         return api().patch("users/me", data);
     },
 
-    // POST /api/register 
+    // POST /api/users (registo)
     register(userData) {
-        return api().post("/register", userData);
+        return api().post("/users", userData);
     }
 }

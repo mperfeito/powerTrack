@@ -125,7 +125,49 @@ export const getGoalById = async (req, res) => {
         console.error('Error fetching goal:', err);
         res.status(500).json({ errorMessage: 'Internal server error' });
     }
-};
+}; 
+
+// Update a goal 
+export const updateGoal = async (req, res) => {  
+    try {
+        const { id_house } = await getActiveHouse(req.user.id_user);
+        const { id_goal } = req.params;
+        const { period_type, target_value, start_date, end_date } = req.body;
+
+        if (!period_type || !target_value) {
+            return res.status(400).json({ 
+                errorMessage: 'Period type and target value are required' 
+            });
+        }
+        const formatDate = (dateString) => {
+            if (!dateString) return null;
+            return new Date(dateString).toISOString().slice(0, 10);
+        };
+
+        const updatedGoal = {
+            period_type,
+            target_value,
+            start_date: formatDate(start_date),
+            end_date: formatDate(end_date)
+        };
+
+        const result = await goalsModel.updateGoal(id_house, id_goal, updatedGoal);
+        
+        if (result.affectedRows === 0) {
+            return res.status(404).json({ 
+                errorMessage: 'Goal not found to update' 
+            });
+        }
+
+        res.status(200).json({ 
+            message: 'Resource successfully updated', 
+            goal: { ...updatedGoal, id_goal } 
+        });
+    } catch (err) {
+        console.error('Error updating goal:', err);
+        res.status(500).json({ errorMessage: 'Failed to update goal' });
+    }
+}
 
 // Add a new goal
 export const addGoal = async (req, res) => {

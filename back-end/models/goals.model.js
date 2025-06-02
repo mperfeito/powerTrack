@@ -122,4 +122,21 @@ export const getCurrentDayProgress = async (id_house) => {
         [id_house, today]
     );
     return result;
-};
+}; 
+
+//update goal 
+ export const updateGoal = async (id_house, id_goal, goalData) => {  
+    try {
+        const [result] = await db.execute(
+            `UPDATE goals 
+             SET period_type = ?, target_value = ?, start_date = ?, end_date = ? 
+             WHERE id_house = ? AND id_goal = ?`,
+            [goalData.period_type, goalData.target_value, goalData.start_date, 
+             goalData.end_date, id_house, id_goal]
+        );
+        return result;
+    } catch (err) {
+        console.error('Error updating goal:', err);
+        throw err;
+    }
+ }
