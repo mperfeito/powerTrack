@@ -9,8 +9,10 @@ import {
 import cron from "node-cron";
 import { getActiveHouse } from "../models/houses.model.js";
 
-export async function insertReadings() {
-  cron.schedule("*/30 * * * *", async () => {
+export async function insertReadings() { 
+  //*/30 - de 30 minutos em 30 minutos
+  //1 - hora em hora
+  cron.schedule("1 * * * *", async () => {
     try {
       const houses = await getHouses();
       if (houses.length === 0) {

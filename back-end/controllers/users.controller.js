@@ -49,23 +49,22 @@ export const register = async (req, res) => {
 export const login = async (req, res) => {
   try {
     const { email, password } = req.body;
-    console.log('Login attempt for email:', email); // Add this
-    console.log('Provided password:', password); // Add this
-
+    console.log('Login attempt for email:', email); 
+    console.log('Provided password:', password); 
     const existUser = await findByEmail(email);
-    console.log('User found in DB:', existUser); // Add this
+    console.log('User found in DB:', existUser); 
 
     if (!existUser) {
-      console.log('No user found with this email'); // Add this
+      console.log('No user found with this email'); 
       return res.status(400).json({ error: "Invalid credentials..." });
     }
 
-    console.log('Stored hashed password:', existUser.password); // Add this
+    console.log('Stored hashed password:', existUser.password); 
     const matchPassword = await bcrypt.compare(password, existUser.password);
-    console.log('Password match result:', matchPassword); // Add this
+    console.log('Password match result:', matchPassword); 
 
     if (!matchPassword) {
-      console.log('Password does not match'); // Add this
+      console.log('Password does not match'); 
       return res.status(400).json({ error: "Invalid credentials..." });
     }
 

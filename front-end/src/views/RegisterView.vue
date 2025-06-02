@@ -14,6 +14,18 @@
               </div>
 
               <form @submit.prevent="handleRegister">
+                <!-- Success Message -->
+                <div v-if="successMessage" class="alert alert-success mb-4">
+                  <i class="fas fa-check-circle me-2"></i>
+                  {{ successMessage }}
+                </div>
+
+                <!-- Error Message -->
+                <div v-if="errorMessage" class="alert alert-danger mb-4">
+                  <i class="fas fa-exclamation-circle me-2"></i>
+                  {{ errorMessage }}
+                </div>
+
                 <div class="row">
                   <div class="col-md-6 mb-4">
                     <label for="firstName" class="form-label">First Name</label>
@@ -120,8 +132,15 @@
                 <button
                   type="submit"
                   class="btn btn-primary btn-lg w-100 py-3 shadow mb-3"
+                  :disabled="loading"
                 >
-                  <i class="fas fa-user-plus me-2"></i> Create Account
+                  <span v-if="loading">
+                    <i class="fas fa-spinner fa-spin me-2"></i>
+                    Processing...
+                  </span>
+                  <span v-else>
+                    <i class="fas fa-user-plus me-2"></i> Create Account
+                  </span>
                 </button>
 
                 <div class="text-center mt-4">
@@ -149,52 +168,81 @@ import { useAuthStore } from '../stores/authStore'
 const firstName = ref('')
 const lastName = ref('')
 const email = ref('')
+const phoneNumber = ref('')
+const nif = ref('')
 const password = ref('')
 const confirmPassword = ref('')
 const agreeTerms = ref(false)
 const loading = ref(false)
 const errorMessage = ref('')
+const successMessage = ref('')
 const router = useRouter()
 const authStore = useAuthStore()
 
 const handleRegister = async () => {
   errorMessage.value = ''
-  
+  successMessage.value = ''
+  loading.value = true
+
+  // Client-side validation
   if (password.value !== confirmPassword.value) {
     errorMessage.value = 'Passwords do not match'
+    loading.value = false
     return
   }
 
-  loading.value = true
+  if (password.value.length < 8) {
+    errorMessage.value = 'Password must be at least 8 characters'
+    loading.value = false
+    return
+  }
 
   try {
+    // Register the user
     await authStore.register({
-      firstName: firstName.value,
-      lastName: lastName.value,
+      first_name: firstName.value,
+      last_name: lastName.value,
       email: email.value,
+      phone_number: phoneNumber.value,
+      nif: nif.value,
       password: password.value
     })
-    router.push('/dashboard')
-  } catch (error) {
-    console.error('Registration failed:', error)
+
+    // Show success message
+    successMessage.value = 'Registration successful! Redirecting to login...'
     
-    if (error.response) {
-      if (error.response.status === 400) {
-        errorMessage.value = error.response.data?.message || 'Validation error'
-      } else if (error.response.status === 409) {
-        errorMessage.value = 'Email already exists'
-      } else {
-        errorMessage.value = error.response.data?.message || 'Registration failed'
+    // Redirect to login after 2 seconds
+    setTimeout(() => {
+      router.push('/login')
+    }, 2000)
+    
+    
+  } catch (error) {
+    console.error('Registration failed:', error);
+    
+    if (error.response?.data?.error === 'Invalid token') {
+      errorMessage.value = 'Registration successful! Please login now.';
+      router.push('/login');
+    }
+    else if (error.response?.data?.sqlMessage?.includes('Duplicate entry')) {
+      if (error.response?.data?.sqlMessage?.includes('users.nif')) {
+        errorMessage.value = 'This NIF is already registered';
+      } 
+      else if (error.response?.data?.sqlMessage?.includes('users.email')) {
+        errorMessage.value = 'This email is already registered';
       }
-    } else if (error.request) {
-      errorMessage.value = 'Network error. Please check your connection.'
+      else if (error.response?.data?.sqlMessage?.includes('users.phone_number')) {
+        errorMessage.value = 'This phone number is already registered';
+      }
     } else {
-      errorMessage.value = 'An unexpected error occurred'
+      errorMessage.value = error.response?.data?.message || 
+                         'Registration failed. Please try again.';
     }
   } finally {
-    loading.value = false
+    loading.value = false;
   }
-}
+};
+
 </script>
 
 <style scoped>
@@ -252,6 +300,11 @@ const handleRegister = async () => {
   background-color: #d4a53f;
 }
 
+.btn-primary:disabled {
+  background-color: #dfb046;
+  opacity: 0.7;
+}
+
 .logo-icon {
   font-size: 3rem;
   color: #dfb046;
@@ -278,6 +331,22 @@ p {
 
 .form-check-label {
   color: #6c757d;
+}
+
+.alert-success {
+  background-color: #d4edda;
+  color: #155724;
+  border-color: #c3e6cb;
+  padding: 0.75rem 1.25rem;
+  border-radius: 0.25rem;
+}
+
+.alert-danger {
+  background-color: #f8d7da;
+  color: #721c24;
+  border-color: #f5c6cb;
+  padding: 0.75rem 1.25rem;
+  border-radius: 0.25rem;
 }
 
 @keyframes float {

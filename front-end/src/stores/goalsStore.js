@@ -2,6 +2,18 @@
 import { defineStore } from 'pinia'
 import goalsApi from '@/api/goals'
 
+//  format dates 
+const formatDate = (dateString) => {
+  if (!dateString) return '';
+  if (/^\d{4}-\d{2}-\d{2}$/.test(dateString)) {
+    return dateString;
+  }
+  const date = new Date(dateString);
+  if (isNaN(date.getTime())) return ''; 
+  
+  return date.toISOString().split('T')[0];
+};
+
 export const useGoalsStore = defineStore('goals', {
   state: () => ({
     goals: [],
@@ -10,8 +22,7 @@ export const useGoalsStore = defineStore('goals', {
       targetValue: "",
       period: "monthly",
       startDate: "",
-      endDate: "",
-      currentValue: 0
+      endDate: ""
     },
     isEditing: false
   }),
@@ -23,9 +34,8 @@ export const useGoalsStore = defineStore('goals', {
              state.currentGoal.endDate;
     },
     
-    // You can add more getters as needed
     activeGoals: (state) => {
-      const today = new Date().toISOString().split('T')[0];
+      const today = formatDate(new Date());
       return state.goals.filter(goal => 
         goal.startDate <= today && goal.endDate >= today
       );
@@ -36,19 +46,14 @@ export const useGoalsStore = defineStore('goals', {
     async fetchGoals() {
       try {
         const response = await goalsApi.getGoals();
-        // Fetch progress for each goal
-        const goalsWithProgress = await Promise.all(
-          response.data.goals.map(async goal => {
-            const progress = await goalsApi.getGoalProgress(goal.id);
-            return {
-              ...goal,
-              currentValue: progress.data.current_value || 0,
-              period: goal.period_type,
-              targetValue: goal.target_value
-            };
-          })
-        );
-        this.goals = goalsWithProgress;
+        this.goals = response.data.goals.map(goal => ({
+          ...goal,
+          id: goal.id_goal, 
+          period: goal.period_type,
+          targetValue: goal.target_value,
+          startDate: formatDate(goal.start_date),
+          endDate: formatDate(goal.end_date)
+        }));
       } catch (error) {
         console.error('Failed to fetch goals:', error);
         throw error;
@@ -58,7 +63,13 @@ export const useGoalsStore = defineStore('goals', {
     async fetchGoalById(id) {
       try {
         const response = await goalsApi.getGoalById(id);
-        return response.data.goal;
+        const goal = response.data.goal;
+        return {
+          ...goal,
+          id: goal.id_goal || goal.id, 
+          start_date: formatDate(goal.start_date),
+          end_date: formatDate(goal.end_date)
+        };
       } catch (error) {
         console.error('Failed to fetch goal:', error);
         throw error;
@@ -70,8 +81,8 @@ export const useGoalsStore = defineStore('goals', {
         const response = await goalsApi.createGoal({
           period_type: goalData.period,
           target_value: goalData.targetValue,
-          start_date: goalData.startDate,
-          end_date: goalData.endDate
+          start_date: formatDate(goalData.startDate),
+          end_date: formatDate(goalData.endDate)
         });
         await this.fetchGoals();
         return response.data.goal;
@@ -82,14 +93,17 @@ export const useGoalsStore = defineStore('goals', {
     },
 
     async updateGoal() {
-      if (!this.currentGoal.id) return;
+      if (!this.currentGoal.id) {
+        console.error('Cannot update goal: ID is missing');
+        return;
+      }
       
       try {
         const response = await goalsApi.updateGoal(this.currentGoal.id, {
           period_type: this.currentGoal.period,
           target_value: this.currentGoal.targetValue,
-          start_date: this.currentGoal.startDate,
-          end_date: this.currentGoal.endDate
+          start_date: formatDate(this.currentGoal.startDate),
+          end_date: formatDate(this.currentGoal.endDate)
         });
         await this.fetchGoals();
         this.resetCurrentGoal();
@@ -98,12 +112,18 @@ export const useGoalsStore = defineStore('goals', {
         console.error('Failed to update goal:', error);
         throw error;
       }
-    },
+    },  
 
     async deleteGoal(id) {
+      if (!id) {
+        console.error('Cannot delete goal: ID is missing');
+        return;
+      }
+      
       try {
+        console.log('Deleting goal with ID:', id); // Debug log
         await goalsApi.deleteGoal(id);
-        await this.fetchGoals();
+        await this.fetchGoals(); // Refresh the goals list after deletion
       } catch (error) {
         console.error('Failed to delete goal:', error);
         throw error;
@@ -112,12 +132,11 @@ export const useGoalsStore = defineStore('goals', {
 
     setCurrentGoal(goal) {
       this.currentGoal = { 
-        id: goal.id,
-        targetValue: goal.targetValue,
-        period: goal.period,
-        startDate: goal.start_date,
-        endDate: goal.end_date,
-        currentValue: goal.currentValue || 0
+        id: goal.id_goal || goal.id, // Handle both backend and frontend ID names
+        targetValue: goal.target_value || goal.targetValue,
+        period: goal.period_type || goal.period,
+        startDate: formatDate(goal.start_date || goal.startDate),
+        endDate: formatDate(goal.end_date || goal.endDate)
       };
       this.isEditing = true;
     },
@@ -128,15 +147,9 @@ export const useGoalsStore = defineStore('goals', {
         targetValue: "",
         period: "monthly",
         startDate: "",
-        endDate: "",
-        currentValue: 0
+        endDate: ""
       };
       this.isEditing = false;
-    },
-
-    // Helper action to calculate progress for display
-    calculateProgress(goal) {
-      return Math.min(Math.round((goal.currentValue / goal.targetValue) * 100), 100);
     }
   }
-})
+});

@@ -102,10 +102,7 @@ const handleLogin = async () => {
       email: email.value,
       password: password.value
     })
-    
-    // Get the redirect query parameter if it exists
     const redirect = router.currentRoute.value.query.redirect
-    // Redirect to the specified path or fallback to '/dashboard'
     router.push(redirect || '/dashboard')
   } catch (error) {
     console.error('Login failed:', error)
