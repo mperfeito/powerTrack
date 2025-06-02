@@ -168,6 +168,7 @@ export async function compareWithSimilarHouses(houseId) {
     throw error;
   }
 }
+
 export async function compareDevices(houseId) {
   try {
     const [totalResult] = await db.query(

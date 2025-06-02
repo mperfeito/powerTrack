@@ -8,12 +8,12 @@
           <i class="fas fa-tachometer-alt me-2" style="color: #467054;"></i> Energy Dashboard
         </h2>
         <div class="d-flex gap-2">
-       
         </div>
       </div>
 
       <div class="widgets-grid">
 
+        <!-- CURRENT CONSUMPTION -->
         <div class="widget-card current-consumption main-widget">
           <div class="widget-header">
             <h5 class="text-dark">
@@ -21,22 +21,32 @@
             </h5>
             <span class="badge" style="background-color: #dfb046; color: white;">Live</span>
           </div>
-          <div class="widget-content">
-            <h1 class="display-4" style="color: #467054;">2.4 <small style="color: #dfb046;">kW</small></h1>
-            <div class="trend-indicator up">
-              <i class="fas fa-arrow-up me-1" style="color: #467054;"></i> <span style="color: #467054;">12%</span> from yesterday
-            </div>
-            <div class="consumption-chart mt-4">
-      
-              <div style="height: 150px; background-color: rgba(223, 176, 70, 0.1); border-radius: 0.5rem; display: flex; align-items: center; justify-content: center; color: #467054;">
-                <i class="fas fa-chart-line fa-2x"></i>
-                <span class="ms-2">Consumption Chart</span>
+
+          <div class="widget-content" v-if="!consumptionsStore.isLoading">
+            <div class="d-flex justify-content-between align-items-start">
+              <div>
+                <h1 class="display-4" style="color: #467054;">
+                  {{ currentConsumption }}
+                  <small style="color: #dfb046;">kW</small>
+                </h1>
+                <!-- <div class="trend-indicator up">
+                  <i class="fas fa-arrow-up me-1" style="color: #467054;"></i> 
+                  <span style="color: #467054;">12%</span> from yesterday
+                </div> -->
+              </div>
+              
+              <!-- Gráfico de linhas menor -->
+              <div class="mini-chart-container">
+                <canvas ref="myChart"></canvas>
               </div>
             </div>
           </div>
+
+          <div v-else class="text-muted py-3">
+            Loading current consumption...
+          </div>
         </div>
 
-     
         <!-- TOP CONSUMING DEVICE -->
         <div class="widget-card top-device medium-widget" v-if="topDevice">
             <div class="widget-header">
@@ -78,7 +88,6 @@
             </div>
         </div>
 
-
         <div class="widget-card goal-comparison medium-widget">
           <div class="widget-header">
             <h5 class="text-dark">
@@ -112,51 +121,70 @@
             <p class="text-center text-secondary mt-3">Monthly Energy Saving Goal</p>
           </div>
         </div>
+   
+        <!-- NEIGHBORHOOD COMPARISON -->
+        <div class="widget-card location-comparison small-widget">  
+          <header class="header d-flex align-items-center">
+            <i class="fas fa-map-marker-alt me-2" style="color: #467054;"></i>
+            <h5 class="title mb-0">Neighborhood</h5>
+          </header>
 
-     
-        <div class="widget-card location-comparison small-widget">
-          <div class="widget-header">
-            <h5 class="text-dark">
-              <i class="fas fa-map-marker-alt me-2" style="color: #467054;"></i> Neighborhood
-            </h5>
+          <div v-if="consumptionsStore.isLoadingSimilarHouses" class="text-center py-3">
+            Loading neighborhood data...
           </div>
-          <div class="widget-content">
-            <div class="comparison-item">
-              <span class="text-secondary">Your Home</span>
-              <span style="color: #467054;">2.4 kW</span>
-            </div>
-            <div class="comparison-item">
-              <span class="text-secondary">Neighborhood Avg</span>
-              <span style="color: #467054;">3.1 kW</span>
-            </div>
-            <div class="trend-indicator down mt-2">
-              <i class="fas fa-arrow-down me-1" style="color: #467054;"></i> <span style="color: #467054;">23%</span> more efficient
-            </div>
+
+          <div v-else-if="consumptionsStore.hasErrorSimilarHouses" class="text-danger py-3">
+            {{ consumptionsStore.errorSimilarHouses }}
+          </div>
+
+          <div v-else-if="consumptionsStore.similarHouses" class="neighborhood-content">
+            <p class="mb-8 neighborhood-subtitles">
+              <strong>My House: </strong>
+              <span class=" house-address">{{ myHouseAddress }}</span>
+            </p>
+
+            <p class="mb-1 neighborhood-subtitles">
+              <strong>Neighborhood: </strong>
+              Comparing with <strong>{{ comparedHousesCount }}</strong> houses nearby
+            </p>
+
+            <p class="comparison-text" :class="{ positive: isPositiveComparison, negative: !isPositiveComparison }">
+              Consumption difference: {{ comparisonValue }}
+            </p>
+          </div>
+
+          <div v-else class="text-muted py-3">
+            No neighborhood data available.
           </div>
         </div>
 
+        <!-- PERIOD COMPARISON -->
         <div class="widget-card time-comparison small-widget">
-          <div class="widget-header">
+          <div class="widget-header d-flex justify-content-between align-items-center">
             <h5 class="text-dark">
-              <i class="fas fa-chart-line me-2" style="color: #467054;"></i> Period Comparison
+              <i class="fas fa-chart-line me-2"></i> Period Average
             </h5>
+            <select class="form-select form-select-sm" style="width: 120px;" v-model="selectedPeriod" @change="onPeriodChange">
+              <option value="day">Day</option>
+              <option value="week">Week</option>
+              <option value="month" selected>Month</option>
+            </select>
           </div>
-          <div class="widget-content">
-            <div class="time-comparison-chart">
-              <div class="chart-bar" style="height: 30%; background-color: rgba(70, 112, 84, 0.3);">
-                <span class="text-secondary">Last Month</span>
-                <span class="value" style="color: #467054;">3.2 kW</span>
-              </div>
-              <div class="chart-bar" style="height: 50%; background-color: rgba(70, 112, 84, 0.5);">
-                <span class="text-secondary">This Month</span>
-                <span class="value" style="color: #467054;">2.4 kW</span>
+          
+          <div class="widget-content" v-if="periodComparisonData.currentPeriod !== undefined">
+            <div class="time-comparison-chart d-flex justify-content-center">
+                <div class="chart-bar" :style="{ height: (periodComparisonData.lastPeriod * 10) + '%', backgroundColor: 'rgba(70, 112, 84, 0.3)' }">
+                <span class="text-secondary">This {{ selectedPeriod }}</span>
+                <span class="value">{{ periodComparisonData.currentPeriod.toFixed(2) }} kW</span>
               </div>
             </div>
-            <div class="trend-indicator down mt-2">
-              <i class="fas fa-arrow-down me-1" style="color: #467054;"></i> <span style="color: #467054;">25%</span> reduction
-            </div>
+          </div>
+          
+          <div v-else>
+            <p class="text-center text-muted py-3">Loading data...</p>
           </div>
         </div>
+
       </div>
     </div>
   </div>
@@ -165,14 +193,76 @@
 <script setup>
 import Sidebar from "@/components/Sidebar.vue";
 import { useAppliancesStore } from "@/stores/appliancesStore";
-import { onMounted, computed } from "vue";
+import { useConsumptionsStore } from "@/stores/consumptionsStore";
+import { ref, onMounted, computed, onBeforeUnmount } from "vue";
+// import Chart from 'chart.js/auto';
+
 
 const appliancesStore = useAppliancesStore();
+const consumptionsStore = useConsumptionsStore();
+
 
 onMounted(() => {
   appliancesStore.fetchAppliances();
+  consumptionsStore.fetchPeriodComparison(selectedPeriod.value);
+  consumptionsStore.fetchLatestReading();
+  consumptionsStore.fetchSimilarHouses();
+
+  // Set up an interval to refresh the current consumption every 30 minutes
+  const interval = setInterval(() => {
+    consumptionsStore.fetchLatestReading();
+  }, 2 * 60 * 1000); // 30 minutes in milliseconds
+
+  // Clean up the interval when the component is unmounted
+  onBeforeUnmount(() => clearInterval(interval));
+
 });
 
+
+////////// CURRENT CONSUMPTION //////////
+const currentConsumption = computed(() => {
+  const value = consumptionsStore.latestReading?.consumption_value;
+  return value !== undefined && value !== null ? parseFloat(value).toFixed(2) : 'N/A';
+});
+
+
+////////// NEIGHBORHOOD //////////
+// Selected period for consumption data (default is 'month')
+const selectedPeriod = ref('month');
+
+// Computed property to determine if the consumption comparison is positive
+const isPositiveComparison = computed(() => {
+  const comparison = consumptionsStore.similarHouses?.comparison || ''
+  return comparison.startsWith('+')
+})
+
+// Computed property to get the address of the selected house
+const myHouseAddress = computed(() =>
+  consumptionsStore.similarHouses?.selectedHouse?.address || 'N/A'
+)
+
+// Computed property to get the number of houses being compared
+const comparedHousesCount = computed(() =>
+  consumptionsStore.similarHouses?.comparedHouses?.length || 0
+)
+
+// Computed property to get the comparison value (e.g., "+10.5%")
+const comparisonValue = computed(() =>
+  consumptionsStore.similarHouses?.comparison || 'N/A'
+)
+
+// Fetch new comparison data when the period changes
+function onPeriodChange() {
+  consumptionsStore.fetchPeriodComparison(selectedPeriod.value);
+}
+
+// Computed property to get the period comparison data
+const periodComparisonData = computed(() => consumptionsStore.periodComparison || {});
+
+
+
+
+///////// TOP APPLIANCE ////////
 // Sort appliances by consumption
 const sortedAppliances = computed(() => {
   return appliancesStore.appliances
@@ -202,6 +292,7 @@ const topDevicePercentage = computed(() => {
   if (!totalConsumption.value || !topDevice.value) return 0;
   return ((topDevice.value.dailyConsumption / totalConsumption.value) * 100).toFixed(0);
 });
+
 </script>
 
 
@@ -272,6 +363,16 @@ const topDevicePercentage = computed(() => {
     font-weight: 600;
     color: #212529;
   }
+}
+
+.widget-header select.form-select {
+  border: 1px solid #467054;
+  border-radius: 0.4rem;
+  padding: 0.25rem 0.5rem;
+  font-size: 0.9rem;
+  color: #467054;
+  background-color: white;
+  cursor: pointer;
 }
 
 .trend-indicator {
@@ -351,26 +452,31 @@ const topDevicePercentage = computed(() => {
 .time-comparison-chart {
   display: flex;
   gap: 1rem;
-  height: 100px;
-  align-items: flex-end;
-  margin-bottom: 0.5rem;
-  
+  height: 8rem;
+  align-items: center;
+  justify-content: center;
+  margin-top: 3rem;
+
   .chart-bar {
-    flex: 1;
+    width: 10rem; 
     border-radius: 0.5rem 0.5rem 0 0;
     display: flex;
     flex-direction: column;
     justify-content: flex-end;
-    padding: 0.5rem;
+    padding: 0.2rem;
     text-align: center;
-    font-size: 0.8rem;
-    
+    font-size: 1rem;
+    font-weight: 600;
+    color: #467054;
+
     .value {
-      font-weight: 500;
-      margin-top: 0.25rem;
+      font-weight: 600;
+      margin-top: 2.5rem;
+      font-size: 1rem;
     }
   }
 }
+
 
 .text-secondary {
   color: #6c757d !important;
@@ -392,4 +498,40 @@ const topDevicePercentage = computed(() => {
     grid-row: span 1;
   }
 }
+
+
+
+/* Mínimos ajustes para o card */
+.widget-card.location-comparison {
+  font-size: 0.9rem;
+  color: #333;
+}
+
+.neighborhood-subtitles{
+  margin-top: 2rem;
+  font-size: 1rem;
+  color: #467054;
+}
+
+.house-address{
+  // color: #467054;
+}
+
+/* Texto de comparação no centro e com cor verde (ou vermelho) */
+.comparison-text {
+  text-align: center;
+  font-size: 1rem;
+  font-weight: 600;
+  margin-top: 2rem;
+  color: #dfb046;
+}
+
+.comparison-text.positive {
+  color: #dfb046; /* verde mais carregado */
+}
+
+.comparison-text.negative {
+  color:#467054; 
+}
+
 </style>
