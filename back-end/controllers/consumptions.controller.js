@@ -5,13 +5,12 @@ import {
   comparePeriod,
   compareWithSimilarHouses,
   compareDevices,
-  getConsumptions
 } from "../models/consumptions.model.js";
 import cron from "node-cron";
 import { getActiveHouse } from "../models/houses.model.js";
 
 export async function insertReadings() {
-  cron.schedule("*/1 * * * *", async () => {
+  cron.schedule("*/30 * * * *", async () => {
     try {
       const houses = await getHouses();
       if (houses.length === 0) {
@@ -91,18 +90,5 @@ export async function latestReading(req, res) {
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: "Internal server error" });
-  }
-}
-
-export async function getConsumptionHistory(req, res) {
-  try {
-    const { id_house: houseId } = await getActiveHouse(req.user.id_user);
-    const limit = parseInt(req.query.limit) || 8;
-
-    const history = await getConsumptions(houseId, limit);
-    res.json(history.reverse()); // Ordem cronológica
-  } catch (error) {
-    console.error("Erro no getConsumptionHistoryController:", error);
-    res.status(500).json({ message: "Erro ao buscar histórico de consumo" });
   }
 }

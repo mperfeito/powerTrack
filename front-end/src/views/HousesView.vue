@@ -142,9 +142,37 @@
 <script setup>
 import Sidebar from "@/components/Sidebar.vue";
 import { ref, computed } from "vue";
-import { useHousesStore } from '@/stores/housesStore'; // ajusta o caminho conforme seu projeto
 
-const housesStore = useHousesStore();
+const houses = ref([
+  {
+    id: 1,
+    name: "Beach House",
+    city: "Cascais",
+    address: "123 Ocean Drive",
+    postalCode: "2750-123",
+    active: true
+  },
+  {
+    id: 2,
+    name: "Mountain Cabin",
+    city: "Sintra",
+    address: "456 Forest Road",
+    postalCode: "2710-456",
+    active: false
+  },
+  {
+    id: 3,
+    name: "City Apartment",
+    city: "Lisbon",
+    address: "789 Downtown Ave",
+    postalCode: "1100-789",
+    active: false
+  }
+]);
+
+const activeHouse = computed(() => {
+  return houses.value.find(house => house.active) || null;
+});
 
 const isEditing = ref(false);
 const currentHouse = ref({
@@ -153,23 +181,48 @@ const currentHouse = ref({
   city: "",
   address: "",
   postalCode: "",
-  active: false,
+  active: false
 });
 
-// Busca as casas e a casa ativa ao carregar o componente
-housesStore.fetchHouses();
-housesStore.fetchActiveHouse();
+const editHouse = (house) => {
+  currentHouse.value = { ...house };
+  isEditing.value = true;
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+};
 
-const houses = computed(() => {
-  return housesStore.houses.map(house => ({
-    id: house.id_house,
-    name: house.name,
-    city: house.city,
-    address: house.address,
-    postalCode: house.postal_code || house.postalCode,
-    active: house.id_house === housesStore.activeHouseId,
-  }));
-});
+const saveHouse = () => {
+  if (!currentHouse.value.name) return;
+  
+  if (isEditing.value) {
+    const index = houses.value.findIndex(h => h.id === currentHouse.value.id);
+    if (index !== -1) {
+      houses.value[index] = { ...currentHouse.value };
+    }
+  } else {
+    const newId = Math.max(...houses.value.map(h => h.id), 0) + 1;
+    houses.value.push({
+      ...currentHouse.value,
+      id: newId,
+      active: houses.value.length === 0
+    });
+  }
+  resetForm();
+};
+
+const deleteHouse = (id) => {
+  const houseToDelete = houses.value.find(h => h.id === id);
+  if (houseToDelete?.active) return;
+  
+  if (confirm(`Are you sure you want to delete ${houseToDelete.name}?`)) {
+    houses.value = houses.value.filter(h => h.id !== id);
+  }
+};
+
+const setActiveHouse = (id) => {
+  houses.value.forEach(house => {
+    house.active = house.id === id;
+  });
+};
 
 const resetForm = () => {
   currentHouse.value = {
@@ -178,71 +231,11 @@ const resetForm = () => {
     city: "",
     address: "",
     postalCode: "",
-    active: false,
+    active: false
   };
   isEditing.value = false;
 };
-
-const editHouse = (house) => {
-  currentHouse.value = { ...house };
-  isEditing.value = true;
-  window.scrollTo({ top: 0, behavior: 'smooth' });
-};
-
-const saveHouse = async () => {
-  if (!currentHouse.value.name) return;
-
-  try {
-    if (isEditing.value) {
-      await housesStore.updateHouse(currentHouse.value.id, {
-        name: currentHouse.value.name,
-        city: currentHouse.value.city,
-        address: currentHouse.value.address,
-        postal_code: currentHouse.value.postalCode,
-      });
-    } else {
-      await housesStore.createHouse({
-        name: currentHouse.value.name,
-        city: currentHouse.value.city,
-        address: currentHouse.value.address,
-        postal_code: currentHouse.value.postalCode,
-      });
-    }
-    await housesStore.fetchHouses();
-    resetForm();
-  } catch (error) {
-    alert('Erro ao salvar casa: ' + error.message);
-  }
-};
-
-const deleteHouse = async (id) => {
-  const houseToDelete = houses.value.find(h => h.id === id);
-  if (houseToDelete?.active) return alert('Não pode deletar a casa ativa.');
-
-  if (confirm(`Tem certeza que deseja deletar ${houseToDelete.name}?`)) {
-    try {
-      await housesStore.deleteHouse(id);
-      await housesStore.fetchHouses();
-    } catch (error) {
-      alert('Erro ao deletar casa: ' + error.message);
-    }
-  }
-};
-
-const setActiveHouse = async (id) => {
-  try {
-    await housesStore.setActiveHouse(id);
-    await housesStore.fetchActiveHouse();
-  } catch (error) {
-    alert('Erro ao definir casa ativa: ' + error.message);
-  }
-};
 </script>
-
-
-
-
-
 
 <style scoped lang="scss">
 .houses-container {

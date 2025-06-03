@@ -29,11 +29,16 @@
                   {{ currentConsumption }}
                   <small style="color: #dfb046;">kW</small>
                 </h1>
+                <!-- <div class="trend-indicator up">
+                  <i class="fas fa-arrow-up me-1" style="color: #467054;"></i> 
+                  <span style="color: #467054;">12%</span> from yesterday
+                </div> -->
               </div>
-
-            </div>
-            <div id="chart-container" style="display: flex; justify-content: center; align-items: center;">
-              <apexchart type="line" width="600" height= "220" :options="chartOptions" :series="series"></apexchart>
+              
+              <!-- Gráfico de linhas menor -->
+              <div class="mini-chart-container">
+                <canvas ref="myChart"></canvas>
+              </div>
             </div>
           </div>
 
@@ -167,7 +172,7 @@
         </div>
 
         <!-- PERIOD COMPARISON -->
-        <div class="widget-card time-comparison small-widget position-relative"> 
+        <div class="widget-card time-comparison small-widget">
           <div class="widget-header d-flex justify-content-between align-items-center">
             <h5 class="text-dark">
               <i class="fas fa-chart-line me-2"></i> Period Average
@@ -178,21 +183,19 @@
               <option value="month" selected>Month</option>
             </select>
           </div>
-
-          <div class="widget-content" v-if="periodComparisonData.currentPeriod !== undefined" style="position: relative;">
+          
+          <div class="widget-content" v-if="periodComparisonData.currentPeriod !== undefined">
             <div class="time-comparison-chart d-flex justify-content-center">
-              <div class="chart-bar" :style="{ height: (periodComparisonData.lastPeriod * 10) + '%', backgroundColor: 'rgba(70, 112, 84, 0.3)', position: 'relative' }">
+                <div class="chart-bar" :style="{ height: (periodComparisonData.lastPeriod * 10) + '%', backgroundColor: 'rgba(70, 112, 84, 0.3)' }">
                 <span class="text-secondary">This {{ selectedPeriod }}</span>
                 <span class="value">{{ periodComparisonData.currentPeriod.toFixed(2) }} kW</span>
-                <div style="position: absolute; bottom: 0; left: 50%; transform: translateX(-50%); width: 12rem; height: 0.15rem; background-color: rgba(70, 112, 84, 1);"></div>
               </div>
             </div>
           </div>
-
+          
           <div v-else>
             <p class="text-center text-muted py-3">Loading data...</p>
           </div>
-          <i class="fas fa-chart-line" style=" position: absolute; bottom: 0.5rem; right: 1rem; font-size: 8rem; color: rgba(0, 0, 0, 0.05); pointer-events: none;"></i>
         </div>
 
       </div>
@@ -204,7 +207,8 @@
 import Sidebar from "@/components/Sidebar.vue";
 import { useAppliancesStore } from "@/stores/appliancesStore";
 import { useConsumptionsStore } from "@/stores/consumptionsStore";
-import { ref, onMounted, computed, onBeforeUnmount } from "vue";
+import { ref, onMounted, computed, onBeforeUnmount } from "vue"; 
+import { useGoalsStore } from "../stores/goalsStore";
 // import Chart from 'chart.js/auto';
 
 
@@ -219,7 +223,7 @@ onMounted(async () => {
   appliancesStore.fetchAppliances();
   consumptionsStore.fetchPeriodComparison(selectedPeriod.value);
   consumptionsStore.fetchLatestReading();
-  consumptionsStore.fetchSimilarHouses();
+  consumptionsStore.fetchSimilarHouses(); 
 
   await goalsStore.fetchGoals();
   if (goalsStore.activeGoal) {
@@ -231,7 +235,31 @@ onMounted(async () => {
   }, 2 * 60 * 1000); 
 
   onBeforeUnmount(() => clearInterval(interval));
+});
 
+////////// GOALS ////////// 
+const goalProgressPercentage = computed(() => {
+  if (!activeGoal.value) return 0;
+  const progress = goalsStore.goalProgress[activeGoal.value.id];
+  return progress ? Math.round(progress.percentage) : 0;
+});
+
+const goalProgressAchieved = computed(() => {
+  if (!activeGoal.value) return 0;
+  const progress = goalsStore.goalProgress[activeGoal.value.id];
+  return progress ? parseFloat(progress.achieved).toFixed(1) : 0;
+});
+
+const goalProgressRemaining = computed(() => {
+  if (!activeGoal.value) return 0;
+  const progress = goalsStore.goalProgress[activeGoal.value.id];
+  return progress ? Math.max(0, parseFloat(progress.remaining)).toFixed(1) : 0;
+});
+
+const isGoalCompleted = computed(() => {
+  if (!activeGoal.value) return false;
+  const progress = goalsStore.goalProgress[activeGoal.value.id];
+  return progress ? progress.isCompleted : false;
 });
 
 
@@ -240,6 +268,7 @@ const currentConsumption = computed(() => {
   const value = consumptionsStore.latestReading?.consumption_value;
   return value !== undefined && value !== null ? parseFloat(value).toFixed(2) : 'N/A';
 });
+
 
 
 ////////// NEIGHBORHOOD //////////
@@ -276,6 +305,8 @@ function onPeriodChange() {
 const periodComparisonData = computed(() => consumptionsStore.periodComparison || {});
 
 
+
+
 ///////// TOP APPLIANCE ////////
 // Sort appliances by consumption
 const sortedAppliances = computed(() => {
@@ -306,12 +337,6 @@ const topDevicePercentage = computed(() => {
   if (!totalConsumption.value || !topDevice.value) return 0;
   return ((topDevice.value.dailyConsumption / totalConsumption.value) * 100).toFixed(0);
 });
-
-// Expose
-const components = {
-  apexchart: VueApexCharts,
-};
-
 
 </script>
 
