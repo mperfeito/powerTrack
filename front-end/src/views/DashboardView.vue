@@ -29,16 +29,11 @@
                   {{ currentConsumption }}
                   <small style="color: #dfb046;">kW</small>
                 </h1>
-                <!-- <div class="trend-indicator up">
-                  <i class="fas fa-arrow-up me-1" style="color: #467054;"></i> 
-                  <span style="color: #467054;">12%</span> from yesterday
-                </div> -->
               </div>
-              
-              <!-- Gráfico de linhas menor -->
-              <div class="mini-chart-container">
-                <canvas ref="myChart"></canvas>
-              </div>
+
+            </div>
+            <div id="chart-container" style="display: flex; justify-content: center; align-items: center;">
+              <apexchart type="line" width="600" height= "220" :options="chartOptions" :series="series"></apexchart>
             </div>
           </div>
 
@@ -87,6 +82,7 @@
               </div>
             </div>
         </div>
+
         <!-- GOAL PROGRESS -->
         <div class="widget-card goal-comparison medium-widget">
           <div class="widget-header">
@@ -172,7 +168,7 @@
         </div>
 
         <!-- PERIOD COMPARISON -->
-        <div class="widget-card time-comparison small-widget">
+        <div class="widget-card time-comparison small-widget position-relative"> 
           <div class="widget-header d-flex justify-content-between align-items-center">
             <h5 class="text-dark">
               <i class="fas fa-chart-line me-2"></i> Period Average
@@ -183,12 +179,13 @@
               <option value="month" selected>Month</option>
             </select>
           </div>
-          
-          <div class="widget-content" v-if="periodComparisonData.currentPeriod !== undefined">
+
+          <div class="widget-content" v-if="periodComparisonData.currentPeriod !== undefined" style="position: relative;">
             <div class="time-comparison-chart d-flex justify-content-center">
-                <div class="chart-bar" :style="{ height: (periodComparisonData.lastPeriod * 10) + '%', backgroundColor: 'rgba(70, 112, 84, 0.3)' }">
+              <div class="chart-bar" :style="{ height: (periodComparisonData.lastPeriod * 10) + '%', backgroundColor: 'rgba(70, 112, 84, 0.3)', position: 'relative' }">
                 <span class="text-secondary">This {{ selectedPeriod }}</span>
                 <span class="value">{{ periodComparisonData.currentPeriod.toFixed(2) }} kW</span>
+                <div style="position: absolute; bottom: 0; left: 50%; transform: translateX(-50%); width: 12rem; height: 0.15rem; background-color: rgba(70, 112, 84, 1);"></div>
               </div>
             </div>
           </div>
@@ -196,6 +193,7 @@
           <div v-else>
             <p class="text-center text-muted py-3">Loading data...</p>
           </div>
+          <i class="fas fa-chart-line" style=" position: absolute; bottom: 0.5rem; right: 1rem; font-size: 8rem; color: rgba(0, 0, 0, 0.05); pointer-events: none;"></i>
         </div>
 
       </div>
@@ -209,7 +207,7 @@ import { useAppliancesStore } from "@/stores/appliancesStore";
 import { useConsumptionsStore } from "@/stores/consumptionsStore";
 import { ref, onMounted, computed, onBeforeUnmount } from "vue"; 
 import { useGoalsStore } from "../stores/goalsStore";
-// import Chart from 'chart.js/auto';
+import VueApexCharts from "vue3-apexcharts";
 
 
 const appliancesStore = useAppliancesStore();
@@ -224,6 +222,7 @@ onMounted(async () => {
   consumptionsStore.fetchPeriodComparison(selectedPeriod.value);
   consumptionsStore.fetchLatestReading();
   consumptionsStore.fetchSimilarHouses(); 
+  consumptionsStore.fetchConsumptionHistory();
 
   await goalsStore.fetchGoals();
   if (goalsStore.activeGoal) {
@@ -270,6 +269,89 @@ const currentConsumption = computed(() => {
 });
 
 
+/////// CHART ///////
+const apexchart = VueApexCharts;
+
+const series = computed(() => {
+  // Get all the consumption values
+  const history = consumptionsStore.consumptionHistory || [];
+
+  const numericHistory = history
+    .map(h => parseFloat(h))
+    .filter(h => !isNaN(h));
+
+  // GET current consumption
+  const currentValue = consumptionsStore.latestReading?.consumption_value;
+  const currentNumber = currentValue !== undefined && currentValue !== null
+    ? parseFloat(currentValue)
+    : null;
+
+  const finalData = currentNumber !== null && !isNaN(currentNumber)
+    ? [...numericHistory, currentNumber]
+    : [...numericHistory];
+
+  return [{
+    name: "Consumption",
+    data: finalData
+  }];
+});
+
+
+const chartOptions = ref({
+  chart: {
+    type: 'line',
+    animations: {
+      enabled: true,
+      easing: 'linear',
+      speed: 300
+    },
+    toolbar: {
+      show: false
+    },
+    zoom: {
+      enabled: false
+    }
+  },
+  stroke: {
+    curve: 'smooth',
+    width: 3
+  },
+  colors: ['#467054'],
+  xaxis: {
+    categories: ['1', '2', '3', '4', '5', '6', '7', '8', 'Current'],
+    labels: {
+      style: {
+        colors: '#467054'
+      }
+    }
+  },
+  yaxis: {
+    labels: {
+      formatter: function(val) {
+        return val ? val.toFixed(2) + ' kW' : '';
+      }
+    }
+  },
+  tooltip: {
+    enabled: true,
+    y: {
+      formatter: function(val) {
+        return val ? val.toFixed(2) + ' kW' : 'No data';
+      }
+    }
+  },
+  markers: {
+    size: 5,
+    hover: {
+      size: 7
+    }
+  },
+  noData: {
+    text: 'Loading data...'
+  }
+});
+
+
 
 ////////// NEIGHBORHOOD //////////
 // Selected period for consumption data (default is 'month')
@@ -305,8 +387,6 @@ function onPeriodChange() {
 const periodComparisonData = computed(() => consumptionsStore.periodComparison || {});
 
 
-
-
 ///////// TOP APPLIANCE ////////
 // Sort appliances by consumption
 const sortedAppliances = computed(() => {
@@ -337,6 +417,11 @@ const topDevicePercentage = computed(() => {
   if (!totalConsumption.value || !topDevice.value) return 0;
   return ((topDevice.value.dailyConsumption / totalConsumption.value) * 100).toFixed(0);
 });
+
+// Expose
+const components = {
+  apexchart: VueApexCharts,
+};
 
 </script>
 

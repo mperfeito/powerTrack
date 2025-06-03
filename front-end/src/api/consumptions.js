@@ -13,7 +13,7 @@ export default {
       params: { period }
     });
   },
-
+  
   // GET /api/consumptions/compare-similar
   getSimilarHouses() {
     return api.get('/consumptions/compare-similar');
@@ -22,5 +22,12 @@ export default {
   // GET /api/consumptions/compare-devices
   getDevicesComparison() {
     return api.get('/consumptions/compare-devices');
+  },
+
+  // GET /api/consumptions/history
+  getConsumptionHistory(limit) {
+    return api.get('/consumptions/history', {
+      params: { limit }
+    });
   }
 }
