@@ -87,38 +87,51 @@
               </div>
             </div>
         </div>
-
+        <!-- GOAL PROGRESS -->
         <div class="widget-card goal-comparison medium-widget">
           <div class="widget-header">
             <h5 class="text-dark">
               <i class="fas fa-bullseye me-2" style="color: #467054;"></i> Goal Progress
             </h5>
+            <!-- <span v-if="isGoalCompleted" class="badge" style="background-color: #467054; color: white;">Completed</span> -->
           </div>
-          <div class="widget-content">
-            <div class="d-flex align-items-center justify-content-around">
+          <div class="widget-content" v-if="!goalsStore.isLoading">
+            <div v-if="activeGoal" class="d-flex align-items-center justify-content-around">
               <div class="circular-progress">
-                <div class="circle-progress" :style="{ '--progress': '65' }">
-                  <span style="color: #467054; font-size: 1.8rem; font-weight: 700;">65%</span>
+                <div class="circle-progress" :style="{ '--progress': goalProgressPercentage }">
+                  <span style="color: #467054; font-size: 1.8rem; font-weight: 700;">{{ goalProgressPercentage }}%</span>
                 </div>
               </div>
               <div class="goal-details ms-3">
                 <div class="goal-stats">
                   <div class="stat-item">
                     <span class="stat-label">Target:</span>
-                    <span class="stat-value" style="color: #467054;">500 kWh</span>
+                    <span class="stat-value" style="color: #467054;">{{ activeGoal.targetValue }} kWh</span>
                   </div>
                   <div class="stat-item">
-                    <span class="stat-label">Achieved:</span>
-                    <span class="stat-value" style="color: #467054;">325 kWh</span>
+                    <span class="stat-label">Current:</span>
+                    <span class="stat-value" :style="{ color: isGoalCompleted ? '#467054' : '#dfb046' }">
+                      {{ goalProgressAchieved }} kWh
+                    </span>
                   </div>
                   <div class="stat-item">
                     <span class="stat-label">Remaining:</span>
-                    <span class="stat-value" style="color: #467054;">175 kWh</span>
-                  </div>
+                    <span class="stat-value" style="color: #467054;">
+                      {{ goalProgressRemaining }} kWh
+                    </span>
+                  </div> 
                 </div>
               </div>
             </div>
-            <p class="text-center text-secondary mt-3">Monthly Energy Saving Goal</p>
+            <div v-else class="text-center py-3">
+              No active goal set
+            </div>
+            <p class="text-center text-secondary mt-3">
+              {{ activeGoal ? `${activeGoal.period_type} Energy Goal` : 'Set a goal to track progress' }}
+            </p>
+          </div> 
+          <div v-else class="text-center py-3">
+            Loading goal data...
           </div>
         </div>
    
@@ -194,28 +207,59 @@
 import Sidebar from "@/components/Sidebar.vue";
 import { useAppliancesStore } from "@/stores/appliancesStore";
 import { useConsumptionsStore } from "@/stores/consumptionsStore";
-import { ref, onMounted, computed, onBeforeUnmount } from "vue";
+import { ref, onMounted, computed, onBeforeUnmount } from "vue"; 
+import { useGoalsStore } from "../stores/goalsStore";
 // import Chart from 'chart.js/auto';
 
 
 const appliancesStore = useAppliancesStore();
-const consumptionsStore = useConsumptionsStore();
+const consumptionsStore = useConsumptionsStore(); 
+const goalsStore = useGoalsStore();
 
 
-onMounted(() => {
+const activeGoal = computed(() => goalsStore.activeGoal);
+
+onMounted(async () => {  
   appliancesStore.fetchAppliances();
   consumptionsStore.fetchPeriodComparison(selectedPeriod.value);
   consumptionsStore.fetchLatestReading();
-  consumptionsStore.fetchSimilarHouses();
+  consumptionsStore.fetchSimilarHouses(); 
 
-  // Set up an interval to refresh the current consumption every 30 minutes
+  await goalsStore.fetchGoals();
+  if (goalsStore.activeGoal) {
+    await goalsStore.calculateGoalProgress(goalsStore.activeGoal.id);
+  }  
+
   const interval = setInterval(() => {
     consumptionsStore.fetchLatestReading();
-  }, 2 * 60 * 1000); // 30 minutes in milliseconds
+  }, 2 * 60 * 1000); 
 
-  // Clean up the interval when the component is unmounted
   onBeforeUnmount(() => clearInterval(interval));
+});
 
+////////// GOALS ////////// 
+const goalProgressPercentage = computed(() => {
+  if (!activeGoal.value) return 0;
+  const progress = goalsStore.goalProgress[activeGoal.value.id];
+  return progress ? Math.round(progress.percentage) : 0;
+});
+
+const goalProgressAchieved = computed(() => {
+  if (!activeGoal.value) return 0;
+  const progress = goalsStore.goalProgress[activeGoal.value.id];
+  return progress ? parseFloat(progress.achieved).toFixed(1) : 0;
+});
+
+const goalProgressRemaining = computed(() => {
+  if (!activeGoal.value) return 0;
+  const progress = goalsStore.goalProgress[activeGoal.value.id];
+  return progress ? Math.max(0, parseFloat(progress.remaining)).toFixed(1) : 0;
+});
+
+const isGoalCompleted = computed(() => {
+  if (!activeGoal.value) return false;
+  const progress = goalsStore.goalProgress[activeGoal.value.id];
+  return progress ? progress.isCompleted : false;
 });
 
 
@@ -224,6 +268,7 @@ const currentConsumption = computed(() => {
   const value = consumptionsStore.latestReading?.consumption_value;
   return value !== undefined && value !== null ? parseFloat(value).toFixed(2) : 'N/A';
 });
+
 
 
 ////////// NEIGHBORHOOD //////////

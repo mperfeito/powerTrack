@@ -164,26 +164,32 @@ const saveSettings = async () => {
   saving.value = true;
   
   try {
-    const updateData = {
-      first_name: user.value.first_name,
-      last_name: user.value.last_name,
-      phone_number: user.value.phone_number
-    };
+    // Only handle password update if new password was provided
     if (password.value.new) {
+      // Validate passwords
       if (password.value.new !== password.value.confirm) {
         throw new Error("New passwords don't match");
       }
-      updateData.password = password.value.new;
-      updateData.currentPassword = password.value.current;
+      if (!password.value.current) {
+        throw new Error("Current password is required to change password");
+      }
+
+      // Call the dedicated password update action
+      await authStore.updatePassword({
+        currentPassword: password.value.current,
+        newPassword: password.value.new
+      });
+      
+      // Clear password fields after successful update
+      password.value = { current: "", new: "", confirm: "" };
+      
+      alert("Password updated successfully!");
+    } else {
+      alert("No changes to save");
     }
-    const response = await axios.put("/auth/user", updateData);
-    authStore.user = { ...authStore.user, ...updateData };
-    password.value = { current: "", new: "", confirm: "" };
-    
-    alert("Settings updated successfully!");
   } catch (error) {
-    console.error("Update error:", error);
-    alert(error.response?.data?.error || error.message || "Update failed");
+    console.error("Password update error:", error);
+    alert(error.response?.data?.error || error.message || "Password update failed");
   } finally {
     saving.value = false;
   }
