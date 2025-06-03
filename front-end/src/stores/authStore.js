@@ -23,16 +23,16 @@ export const useAuthStore = defineStore('auth', {
     },
 
     async register(userData) {
-      console.log("[DEBUG] Sending registration payload:", userData); // Add this
+      console.log("[DEBUG] Sending registration payload:", userData); 
       try {
         const response = await api.post('/users', userData);
-        console.log("[DEBUG] Registration success:", response.data); // Add this
+        console.log("[DEBUG] Registration success:", response.data); 
         this.token = response.data.token;
         localStorage.setItem('token', this.token);
         await this.fetchUser();
         return true;
       } catch (error) {
-        console.error("[DEBUG] Registration failed:", error.response?.data || error.message); // Add this
+        console.error("[DEBUG] Registration failed:", error.response?.data || error.message); 
         this.clearAuth();
         throw error;
       }
@@ -48,12 +48,15 @@ export const useAuthStore = defineStore('auth', {
       }
     }, 
 
-    async updateUser(data) {  
+    async updatePassword(data) {
       try {
-        const response = await api.patch('/users/me', data)
-        this.user = { ...this.user, ...response.data }
+        const response = await api.patch('/users/me', {
+          currentPassword: data.currentPassword,
+          newPassword: data.newPassword
+        });
+        return response.data;
       } catch (error) {
-        throw error
+        throw error;
       }
     },
 

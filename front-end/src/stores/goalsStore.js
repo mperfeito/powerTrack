@@ -16,7 +16,10 @@ const formatDate = (dateString) => {
 
 export const useGoalsStore = defineStore('goals', {
   state: () => ({
-    goals: [],
+    goals: [], 
+    goalProgress:{}, 
+    isLodding: false, 
+    error:null,
     currentGoal: {
       id: null,
       targetValue: "",
@@ -33,12 +36,20 @@ export const useGoalsStore = defineStore('goals', {
              state.currentGoal.startDate && 
              state.currentGoal.endDate;
     },
-    
-    activeGoals: (state) => {
-      const today = formatDate(new Date());
-      return state.goals.filter(goal => 
-        goal.startDate <= today && goal.endDate >= today
-      );
+      activeGoal: (state) => {
+      if (state.goals.length === 0) return null;
+      
+      const now = new Date();
+      const currentDate = now.toISOString().split('T')[0];
+      
+      const sortedGoals = [...state.goals].sort((a, b) => {
+        const dateA = new Date(a.endDate);
+        const dateB = new Date(b.endDate);
+        return dateA - dateB; 
+      });
+      
+      const upcomingGoal = sortedGoals.find(goal => goal.endDate >= currentDate);
+      return upcomingGoal || sortedGoals[sortedGoals.length - 1];
     }
   },
 
@@ -130,9 +141,37 @@ export const useGoalsStore = defineStore('goals', {
       }
     },
 
+    async calculateGoalProgress(id) {  
+      if (!id) {
+        console.error('Cannot calculate progress: ID is missing');
+        return;
+      }
+      
+      this.isLoading = true;
+      this.error = null;
+      try {
+        const response = await goalsApi.calculateGoalProgress(id);
+        
+        this.goalProgress[id] = {
+          percentage: response.data.progress_percentage,
+          achieved: response.data.current_value,
+          remaining: response.data.remaining,
+          isCompleted: response.data.is_completed
+        };
+        
+        return this.goalProgress[id];
+      } catch (error) {
+        this.error = error.message;
+        console.error('Failed to calculate goal progress:', error);
+        throw error;
+      } finally {
+        this.isLoading = false;
+      }
+    },
+
     setCurrentGoal(goal) {
       this.currentGoal = { 
-        id: goal.id_goal || goal.id, // Handle both backend and frontend ID names
+        id: goal.id_goal || goal.id, 
         targetValue: goal.target_value || goal.targetValue,
         period: goal.period_type || goal.period,
         startDate: formatDate(goal.start_date || goal.startDate),
