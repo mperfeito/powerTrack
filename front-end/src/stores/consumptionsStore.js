@@ -9,24 +9,40 @@ export const useConsumptionsStore = defineStore('consumptions', {
     devicesComparison: null,
     loading: false,
     error: null,
+    consumptionHistory: [],
   }),
 
   actions: {
-async fetchLatestReading() {
-  this.loading = true;
-  this.error = null;
-  try {
-    const response = await consumptionsApi.getLatestReading();
-    console.log('fetchLatestReading response:', response.data);
-    this.latestReading = response.data;
-  } catch (err) {
-    console.error('fetchLatestReading error:', err);
-    this.error = err.response?.data?.message || err.message || 'Error fetching latest reading';
-  } finally {
-    this.loading = false;
-  }
-},
+    async fetchLatestReading() {
+      this.loading = true;
+      this.error = null;
+      try {
+        const response = await consumptionsApi.getLatestReading();
+        console.log('fetchLatestReading response:', response.data);
+        this.latestReading = response.data;
+      } catch (err) {
+        console.error('fetchLatestReading error:', err);
+        this.error = err.response?.data?.message || err.message || 'Error fetching latest reading';
+      } finally {
+        this.loading = false;
+      }
+    },
 
+  async fetchConsumptionHistory(limit = 8) {
+    this.loading = true;
+    this.error = null;
+    try {
+      const response = await consumptionsApi.getConsumptionHistory(limit);      
+      this.consumptionHistory = response.data.slice().reverse().map(item => parseFloat(item.consumption_value));
+
+    } catch (err) {
+      console.error('fetchConsumptionHistory error:', err);
+      this.error = err.response?.data?.message || err.message || 'Error fetching consumption history';
+
+    } finally {
+      this.loading = false;
+    }
+  },
 
     async fetchPeriodComparison(period) {
       this.loading = true;
@@ -59,9 +75,9 @@ async fetchLatestReading() {
       } finally {
         this.loadingSimilarHouses = false;
       }
-    }
-},
+    },
 
+},
 
   getters: {
     hasError: (state) => !!state.error,

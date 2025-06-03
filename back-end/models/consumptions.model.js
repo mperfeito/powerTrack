@@ -218,3 +218,15 @@ export async function compareDevices(houseId) {
     throw error;
   }
 }
+
+export async function getConsumptions(houseId, limit = 8) {
+  const query = `
+    SELECT consumption_value, reading_date
+    FROM consumption_readings
+    WHERE id_house = ?
+    ORDER BY reading_date DESC
+    LIMIT ?
+  `;
+  const [rows] = await db.query(query, [houseId, limit]);
+  return rows;
+}
