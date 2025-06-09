@@ -52,6 +52,17 @@
                       >Remember me</label
                     >
                   </div>
+                </div> 
+                <!-- Success Message -->
+                <div v-if="successMessage" class="alert alert-success mb-4">
+                  <i class="fas fa-check-circle me-2"></i>
+                  {{ successMessage }}
+                </div>
+
+                <!-- Error Message -->
+                <div v-if="errorMessage" class="alert alert-danger mb-4">
+                  <i class="fas fa-exclamation-circle me-2"></i>
+                  {{ errorMessage }}
                 </div>
 
                 <!-- <router-link to="/dashboard"> -->
@@ -102,23 +113,20 @@ const handleLogin = async () => {
       email: email.value,
       password: password.value
     })
-    const redirect = router.currentRoute.value.query.redirect
-    router.push(redirect || '/dashboard')
+    if (authStore.isAdmin) {
+      router.push('/admin')
+    } else {
+      const redirect = router.currentRoute.value.query.redirect
+      router.push(redirect || '/dashboard')
+    }
   } catch (error) {
     console.error('Login failed:', error)
-    
-    if (error.response) {
-      if (error.response.status === 401) {
-        errorMessage.value = 'Invalid email or password'
-      } else if (error.response.status === 500) {
-        errorMessage.value = 'Server error. Please try again later.'
-      } else {
-        errorMessage.value = error.response.data?.message || 'Login failed'
-      }
-    } else if (error.request) {
-      errorMessage.value = 'Network error. Please check your connection.'
+    if (error.response?.data?.sqlMessage?.includes('users.email')) {
+      errorMessage.value = 'This email is already registered'
+    } else if (error.response?.data?.sqlMessage?.includes('users.password')) {
+      errorMessage.value = 'Incorrect password. Please try again.'
     } else {
-      errorMessage.value = 'An unexpected error occurred'
+      errorMessage.value = 'Login failed. Please check your credentials.'
     }
   } finally {
     loading.value = false
@@ -126,7 +134,22 @@ const handleLogin = async () => {
 }
 </script>
 
-<style scoped>
+<style scoped> 
+.alert-success {
+  background-color: #d4edda;
+  color: #155724;
+  border-color: #c3e6cb;
+  padding: 0.75rem 1.25rem;
+  border-radius: 0.25rem;
+}
+
+.alert-danger {
+  background-color: #f8d7da;
+  color: #721c24;
+  border-color: #f5c6cb;
+  padding: 0.75rem 1.25rem;
+  border-radius: 0.25rem;
+}
 .auth-page {
   position: relative;
   min-height: 100vh;
