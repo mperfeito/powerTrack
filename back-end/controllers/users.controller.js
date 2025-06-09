@@ -10,6 +10,10 @@ import dotenv from "dotenv";
 
 dotenv.config();
 
+const isValidEmail = (email) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+const isValidPhoneNumber = (number) => /^\d{9}$/.test(number); 
+const isValidNIF = (nif) => /^\d{9}$/.test(nif);
+
 export const register = async (req, res) => {
   try {
     const {
@@ -22,9 +26,31 @@ export const register = async (req, res) => {
       is_admin = false,
     } = req.body;
 
+
+    if (!first_name || !last_name || !email || !phone_number || !nif || !password) {
+      return res.status(400).json({ error: "All fields are required." });
+    }
+
+    if (!isValidEmail(email)) {
+      return res.status(400).json({ error: "Invalid email format." });
+    }
+
+    if (!isValidPhoneNumber(phone_number)) {
+      return res.status(400).json({ error: "Invalid phone number format." });
+    }
+
+    if (!isValidNIF(nif)) {
+      return res.status(400).json({ error: "Invalid NIF format." });
+    }
+
+    if (typeof is_admin !== "boolean") {
+      return res.status(400).json({ error: "is_admin must be a boolean." });
+    }
+
     const existUser = await findByEmail(email);
-    if (existUser)
-      return res.status(400).json({ error: "Email already registered" });
+    if (existUser) {
+      return res.status(400).json({ error: "Email already registered." });
+    }
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
@@ -49,23 +75,27 @@ export const register = async (req, res) => {
 export const login = async (req, res) => {
   try {
     const { email, password } = req.body;
-    console.log('Login attempt for email:', email); 
-    console.log('Provided password:', password); 
-    const existUser = await findByEmail(email);
-    console.log('User found in DB:', existUser); 
 
-    if (!existUser) {
-      console.log('No user found with this email'); 
-      return res.status(400).json({ error: "Invalid credentials..." });
+    if (!email || !password) {
+      return res.status(400).json({ error: "Email and password are required." });
     }
 
-    console.log('Stored hashed password:', existUser.password); 
-    const matchPassword = await bcrypt.compare(password, existUser.password);
-    console.log('Password match result:', matchPassword); 
+    if (!isValidEmail(email)) {
+      return res.status(400).json({ error: "Invalid email format." });
+    }
 
+    const existUser = await findByEmail(email);
+    if (!existUser) {
+      return res.status(400).json({ error: "Invalid credentials." });
+    }
+
+    const matchPassword = await bcrypt.compare(password, existUser.password);
     if (!matchPassword) {
-      console.log('Password does not match'); 
-      return res.status(400).json({ error: "Invalid credentials..." });
+      return res.status(400).json({ error: "Invalid credentials." });
+    }
+
+    if (!process.env.JWT_SECRET) {
+      return res.status(500).json({ error: "JWT secret not defined in environment." });
     }
 
     const token = jwt.sign({ id: existUser.id_user }, process.env.JWT_SECRET, {
@@ -75,22 +105,57 @@ export const login = async (req, res) => {
     res.json({ token });
   } catch (err) {
     console.error("Login error:", err);
-    res.status(500).json({ error: "Error when logging in" });
+    res.status(500).json({ error: "Error when logging in." });
   }
 };
 
 export const getAuthUser = (req, res) => {
+  if (!req.user) {
+    return res.status(401).json({ error: "Unauthorized." });
+  }
+
   const { password, ...user } = req.user;
   res.json(user);
 };
 
 export const updateAuthUser = async (req, res) => {
   try {
-    let { password, ...otherFields } = req.body;
+    if (!req.user) {
+      return res.status(401).json({ error: "Unauthorized." });
+    }
 
-    password = password ? await bcrypt.hash(password, 10) : req.user.password;
+    const allowedFields = ["first_name", "last_name", "email", "phone_number", "nif", "password"];
+    const updates = Object.keys(req.body);
+    const isValidUpdate = updates.every((field) => allowedFields.includes(field));
 
-    await updateUser(req.user.id_user, { ...otherFields, password });
+    if (!isValidUpdate) {
+      return res.status(400).json({ error: "Invalid fields in request." });
+    }
+
+    let { password, email, phone_number, nif, ...otherFields } = req.body;
+
+    if (email && !isValidEmail(email)) {
+      return res.status(400).json({ error: "Invalid email format." });
+    }
+
+    if (phone_number && !isValidPhoneNumber(phone_number)) {
+      return res.status(400).json({ error: "Invalid phone number format." });
+    }
+
+    if (nif && !isValidNIF(nif)) {
+      return res.status(400).json({ error: "Invalid NIF format." });
+    }
+
+    const newPassword = password ? await bcrypt.hash(password, 10) : req.user.password;
+
+    await updateUser(req.user.id_user, {
+      ...otherFields,
+      email,
+      phone_number,
+      nif,
+      password: newPassword,
+    });
+
     res.json({ message: "Updated data!" });
   } catch (err) {
     console.error("Update error:", err);
@@ -102,7 +167,7 @@ export const getAll = async (req, res) => {
   try {
     const users = await getAllUsers();
     res.json(users);
-  } catch {
+  } catch (err) {
     console.error("Fetching users error:", err);
     res.status(500).json({ error: "Error fetching users" });
   }
