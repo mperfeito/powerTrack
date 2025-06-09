@@ -1,3 +1,4 @@
+//GOALS.CONTROLLER.JS
 import * as goalsModel from '../models/goals.model.js';
 import { getActiveHouse } from '../models/houses.model.js';
 

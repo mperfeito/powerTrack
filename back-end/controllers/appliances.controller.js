@@ -1,3 +1,4 @@
+//APPLIANCES.CONTROLLER.JS
 import * as appliancesModel from "../models/appliances.model.js";
 import { getActiveHouse } from "../models/houses.model.js";
 
