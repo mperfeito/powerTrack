@@ -1,3 +1,4 @@
+//APPLIANCES.ROUTE.JS
 import express from "express";
 import * as appliancesController from "../controllers/appliances.controller.js"; 
 const router = express.Router();

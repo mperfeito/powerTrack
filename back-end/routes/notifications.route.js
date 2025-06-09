@@ -1,3 +1,4 @@
+//NOTIFICATIONS.ROUTE.JS
 import express from "express";
 import {
   getAuthNotifications,

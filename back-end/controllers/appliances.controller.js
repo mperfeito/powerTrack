@@ -1,6 +1,12 @@
 import * as appliancesModel from "../models/appliances.model.js";
 import { getActiveHouse } from "../models/houses.model.js";
 
+const isPositiveNumber = (value) =>
+  typeof value === "number" && value > 0 && Number.isFinite(value);
+
+const isNonEmptyString = (value) =>
+  typeof value === "string" && value.trim().length > 0;
+
 export const getAllAppliances = async (req, res) => {
   try {
     console.log(`Recebida requisição: GET /api/appliances`);
@@ -24,7 +30,15 @@ export const getApplianceById = async (req, res) => {
   try {
     const { id_house } = await getActiveHouse(req.user.id_user);
     const { id_appliance } = req.params;
-    const appliance = await appliancesModel.getApplianceById(id_house, id_appliance);
+
+    if (!/^\d+$/.test(id_appliance)) {
+      return res.status(400).json({ errorMessage: "Invalid appliance ID" });
+    }
+
+    const appliance = await appliancesModel.getApplianceById(
+      id_house,
+      id_appliance
+    );
 
     if (!appliance) {
       return res.status(404).json({ errorMessage: "Appliance not found" });
@@ -42,14 +56,22 @@ export const createAppliance = async (req, res) => {
     const { id_house } = await getActiveHouse(req.user.id_user);
     const { type, state, avg_operating_hours, nominal_power_watts } = req.body;
 
-    if (!type || !state || !avg_operating_hours || !nominal_power_watts) {
+    if (
+      !isNonEmptyString(type) ||
+      !isNonEmptyString(state) ||
+      !isPositiveNumber(avg_operating_hours) ||
+      !isPositiveNumber(nominal_power_watts)
+    ) {
       return res.status(400).json({
         errorMessage:
-          "All fields (type, state, avg_operating_hours, nominal_power_watts) are required",
+          "Invalid or missing fields. Required: non-empty strings 'type' and 'state', positive numbers 'avg_operating_hours' and 'nominal_power_watts'.",
       });
     }
 
-    const existingAppliance = await appliancesModel.getApplianceByType(id_house, type);
+    const existingAppliance = await appliancesModel.getApplianceByType(
+      id_house,
+      type
+    );
 
     if (existingAppliance) {
       return res.status(409).json({
@@ -78,25 +100,61 @@ export const updateAppliance = async (req, res) => {
     const { id_appliance } = req.params;
     const updates = req.body;
 
+    if (!/^\d+$/.test(id_appliance)) {
+      return res.status(400).json({ errorMessage: "Invalid appliance ID" });
+    }
+
     if (!updates || Object.keys(updates).length === 0) {
       return res.status(400).json({ errorMessage: "No fields provided for update" });
     }
 
-    const allowedFields = ["type", "state", "avg_operating_hours", "nominal_power_watts"];
-    const invalidFields = Object.keys(updates).filter(f => !allowedFields.includes(f));
+    const allowedFields = [
+      "type",
+      "state",
+      "avg_operating_hours",
+      "nominal_power_watts",
+    ];
+    const invalidFields = Object.keys(updates).filter(
+      (f) => !allowedFields.includes(f)
+    );
     if (invalidFields.length > 0) {
-      return res.status(400).json({ errorMessage: `Invalid fields in update: ${invalidFields.join(", ")}` });
+      return res.status(400).json({
+        errorMessage: `Invalid fields in update: ${invalidFields.join(", ")}`,
+      });
     }
 
-    const result = await appliancesModel.updateAppliance(id_house, id_appliance, updates);
+    if (
+      ("type" in updates && !isNonEmptyString(updates.type)) ||
+      ("state" in updates && !isNonEmptyString(updates.state)) ||
+      ("avg_operating_hours" in updates &&
+        !isPositiveNumber(Number(updates.avg_operating_hours))) ||
+      ("nominal_power_watts" in updates &&
+        !isPositiveNumber(Number(updates.nominal_power_watts)))
+    ) {
+      return res.status(400).json({
+        errorMessage:
+          "Invalid update values: 'type' and 'state' must be non-empty strings; 'avg_operating_hours' and 'nominal_power_watts' must be positive numbers.",
+      });
+    }
+
+    const result = await appliancesModel.updateAppliance(
+      id_house,
+      id_appliance,
+      updates
+    );
 
     if (result.affectedRows === 0) {
       return res.status(404).json({ errorMessage: "Appliance not found" });
     }
 
-    const updatedAppliance = await appliancesModel.getApplianceById(id_house, id_appliance);
+    const updatedAppliance = await appliancesModel.getApplianceById(
+      id_house,
+      id_appliance
+    );
 
-    res.status(200).json({ message: "Appliance updated successfully", appliance: updatedAppliance });
+    res
+      .status(200)
+      .json({ message: "Appliance updated successfully", appliance: updatedAppliance });
   } catch (err) {
     console.error("Error patching appliance:", err);
     return res.status(500).json({ errorMessage: "Internal server error" });
@@ -108,6 +166,11 @@ export const deleteAppliance = async (req, res) => {
   try {
     const { id_house } = await getActiveHouse(req.user.id_user);
     const { id_appliance } = req.params;
+
+    if (!/^\d+$/.test(id_appliance)) {
+      return res.status(400).json({ errorMessage: "Invalid appliance ID" });
+    }
+
     const result = await appliancesModel.deleteAppliance(id_house, id_appliance);
 
     if (result.affectedRows === 0) {
