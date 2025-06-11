@@ -1,7 +1,6 @@
 <template>
   <div class="d-flex">
     <Sidebar />
-    
     <div class="dashboard-container flex-grow-1 p-5">
       <div class="d-flex justify-content-between align-items-center mb-4">
         <h2 class="text-dark fw-bold">
@@ -10,9 +9,7 @@
         <div class="d-flex gap-2">
         </div>
       </div>
-
       <div class="widgets-grid">
-
         <!-- CURRENT CONSUMPTION -->
         <div class="widget-card current-consumption main-widget">
           <div class="widget-header">
@@ -44,43 +41,75 @@
 
         <!-- TOP CONSUMING DEVICE -->
         <div class="widget-card top-device medium-widget" v-if="topDevice">
-            <div class="widget-header">
-              <h5 class="text-dark">
-                <i class="fas fa-plug me-2" style="color: #467054;"></i> Top Consuming Device
-              </h5>
-            </div>
-            <div class="widget-content">
+          <div class="widget-header">
+            <h5 class="text-dark">
+              <i class="fas fa-fire" style="color: #467054; margin-right: 0.4rem;"></i> Top Consuming Device
+            </h5>
+          </div>
+          <div class="widget-content">
+            <!-- Main Device -->
+            <div class="champion-device">
+              <div class="device-medal">
+                <div class="medal-circle" style="background: linear-gradient(135deg, #dfb046, #f8d37a);">
+                  <i class="fas fa-bolt"></i>
+                </div>
+                <div class="medal-ribbon"></div>
+              </div>
               <div class="device-info">
-                <div class="device-icon" style="background-color: #dfb046; color: white;">
+                <h5 class="device-name">{{ topDevice.type }}</h5>
+                <div class="device-stats-row">
+                  <div class="stat-box">
+                    <span class="stat-value">{{ topDeviceConsumptionKW }} kW</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <!-- Progress -->
+            <div class="energy-meter">
+              <div class="meter-track">
+                <div class="meter-progress" :style="{ width: topDevicePercentage + '%' }"></div>
+              </div>
+              <div class="meter-labels">
+                <span>{{ topDevicePercentage }}%</span>
+                <span>100%</span>
+              </div>
+            </div>
+            <!-- Other Devices -->
+            <div class="contenders-title">
+              <i class="fas fa-trophy" style="color: #467054;"></i>
+              Other Devices
+            </div>          
+            <div class="device-list">
+              <div v-for="device in otherDevices" :key="device.id" class="contender-device">
+                <div class="contender-icon">
                   <i class="fas fa-plug"></i>
                 </div>
-                <div>
-                  <h6 class="text-dark mb-1">{{ topDevice.type }}</h6>
-                  <p class="text-secondary mb-0">
-                    <span style="color: #467054;">{{ topDeviceConsumptionKW }} kW</span>
-                    ({{ topDevicePercentage }}% of total)
-                  </p>
-                </div>
-              </div>
-
-              <div class="progress mt-3">
-                <div
-                  class="progress-bar"
-                  :style="{ width: topDevicePercentage + '%', backgroundColor: '#467054' }"
-                ></div>
-              </div>
-
-              <div class="device-list mt-3">
-                <div
-                  v-for="device in otherDevices"
-                  :key="device.id"
-                  class="d-flex justify-content-between py-2 border-bottom"
-                >
-                  <span>{{ device.type }}</span>
-                  <span style="color: #467054;">{{ (device.dailyConsumption / 1000).toFixed(1) }} kW</span>
-                </div>
+                <span class="contender-name">{{ device.type }}</span>
+                <span class="contender-value">{{ (device.dailyConsumption / 1000).toFixed(1) }} kW</span>
               </div>
             </div>
+          </div>
+        </div>
+
+        <!-- PERIOD AVERAGE -->
+        <div class="widget-card time-comparison small-widget position-relative"> 
+          <div class="widget-header d-flex justify-content-between align-items-center">
+            <h5 class="text-dark">
+              <i class="fas fa-chart-line me-2" style="color: #467054;"></i> Period Average
+            </h5>
+          </div>
+          <div class="widget-content" v-if="periodSeries.length > 0">
+            <apexchart 
+              type="polarArea" 
+              width="100%"
+              height="250" 
+              :options="periodChartOptions" 
+              :series="periodSeries"
+            ></apexchart>
+          </div>
+          <div v-else class="text-center py-3">
+            Loading period data...
+          </div>
         </div>
 
         <!-- GOAL PROGRESS -->
@@ -89,28 +118,32 @@
             <h5 class="text-dark">
               <i class="fas fa-bullseye me-2" style="color: #467054;"></i> Goal Progress
             </h5>
-            <!-- <span v-if="isGoalCompleted" class="badge" style="background-color: #467054; color: white;">Completed</span> -->
           </div>
           <div class="widget-content" v-if="!goalsStore.isLoading">
-            <div v-if="activeGoal" class="d-flex align-items-center justify-content-around">
-              <div class="circular-progress">
-                <div class="circle-progress" :style="{ '--progress': goalProgressPercentage }">
-                  <span style="color: #467054; font-size: 1.8rem; font-weight: 700;">{{ goalProgressPercentage }}%</span>
-                </div>
+            <div v-if="activeGoal" class="d-flex flex-column align-items-center">
+              <!-- GOAL CHART-->
+              <div id="radial-chart" style="width: 100%; max-width: 300px; margin: 0 auto;">
+                <apexchart 
+                  type="radialBar" 
+                  height="200" 
+                  :options="radialChartOptions" 
+                  :series="radialSeries"
+                ></apexchart>
               </div>
-              <div class="goal-details ms-3">
+              <!-- Goal Details -->
+              <div class="goal-details w-100 mt-3">
                 <div class="goal-stats">
-                  <div class="stat-item">
+                  <div class="stat-item d-flex justify-content-between">
                     <span class="stat-label">Target:</span>
                     <span class="stat-value" style="color: #467054;">{{ activeGoal.targetValue }} kWh</span>
                   </div>
-                  <div class="stat-item">
+                  <div class="stat-item d-flex justify-content-between">
                     <span class="stat-label">Current:</span>
                     <span class="stat-value" :style="{ color: isGoalCompleted ? '#467054' : '#dfb046' }">
                       {{ goalProgressAchieved }} kWh
                     </span>
                   </div>
-                  <div class="stat-item">
+                  <div class="stat-item d-flex justify-content-between">
                     <span class="stat-label">Remaining:</span>
                     <span class="stat-value" style="color: #467054;">
                       {{ goalProgressRemaining }} kWh
@@ -118,13 +151,13 @@
                   </div> 
                 </div>
               </div>
+                <p class="text-center text-secondary mt-3" style="background: rgba(70, 112, 84, 0.1); color: #467054; padding: 2px 6px; border-radius: 4px; font-size: 0.65rem; font-weight: bold; text-transform: uppercase;">
+                  {{ activeGoal ? `${activeGoal.period_type} Energy Goal` : 'Set a goal to track progress' }}
+                </p>
             </div>
             <div v-else class="text-center py-3">
               No active goal set
             </div>
-            <p class="text-center text-secondary mt-3">
-              {{ activeGoal ? `${activeGoal.period_type} Energy Goal` : 'Set a goal to track progress' }}
-            </p>
           </div> 
           <div v-else class="text-center py-3">
             Loading goal data...
@@ -132,70 +165,59 @@
         </div>
    
         <!-- NEIGHBORHOOD COMPARISON -->
-        <div class="widget-card location-comparison small-widget">  
-          <header class="header d-flex align-items-center">
-            <i class="fas fa-map-marker-alt me-2" style="color: #467054;"></i>
-            <h5 class="title mb-0">Neighborhood</h5>
+        <div class="widget-card neighborhood-widget small-widget">  
+          <header class="neighborhood-header">
+            <h5 class="text-dark">
+              <i class="fas fa-map-marker-alt icon" style="color: #467054; margin-right: 0.6rem;"></i> Neighborhood
+            </h5>
           </header>
 
-          <div v-if="consumptionsStore.isLoadingSimilarHouses" class="text-center py-3">
+          <div v-if="consumptionsStore.isLoadingSimilarHouses" class="loading-state">
+            <i class="fas fa-spinner fa-spin me-2"></i>
             Loading neighborhood data...
           </div>
 
-          <div v-else-if="consumptionsStore.hasErrorSimilarHouses" class="text-danger py-3">
+          <div v-else-if="consumptionsStore.hasErrorSimilarHouses" class="error-state">
+            <i class="fas fa-exclamation-triangle me-2"></i>
             {{ consumptionsStore.errorSimilarHouses }}
           </div>
 
           <div v-else-if="consumptionsStore.similarHouses" class="neighborhood-content">
-            <p class="mb-8 neighborhood-subtitles">
-              <strong>My House: </strong>
-              <span class=" house-address">{{ myHouseAddress }}</span>
-            </p>
-
-            <p class="mb-1 neighborhood-subtitles">
-              <strong>Neighborhood: </strong>
-              Comparing with <strong>{{ comparedHousesCount }}</strong> houses nearby
-            </p>
-
-            <p class="comparison-text" :class="{ positive: isPositiveComparison, negative: !isPositiveComparison }">
-              Consumption difference: {{ comparisonValue }}
-            </p>
-          </div>
-
-          <div v-else class="text-muted py-3">
-            No neighborhood data available.
-          </div>
-        </div>
-
-        <!-- PERIOD COMPARISON -->
-        <div class="widget-card time-comparison small-widget position-relative"> 
-          <div class="widget-header d-flex justify-content-between align-items-center">
-            <h5 class="text-dark">
-              <i class="fas fa-chart-line me-2"></i> Period Average
-            </h5>
-            <select class="form-select form-select-sm" style="width: 120px;" v-model="selectedPeriod" @change="onPeriodChange">
-              <option value="day">Day</option>
-              <option value="week">Week</option>
-              <option value="month" selected>Month</option>
-            </select>
-          </div>
-
-          <div class="widget-content" v-if="periodComparisonData.currentPeriod !== undefined" style="position: relative;">
-            <div class="time-comparison-chart d-flex justify-content-center">
-              <div class="chart-bar" :style="{ height: (periodComparisonData.lastPeriod * 10) + '%', backgroundColor: 'rgba(70, 112, 84, 0.3)', position: 'relative' }">
-                <span class="text-secondary">This {{ selectedPeriod }}</span>
-                <span class="value">{{ periodComparisonData.currentPeriod.toFixed(2) }} kW</span>
-                <div style="position: absolute; bottom: 0; left: 50%; transform: translateX(-50%); width: 12rem; height: 0.15rem; background-color: rgba(70, 112, 84, 1);"></div>
+            <div class="my-house-card">
+              <div class="house-icon">
+                <i class="fas fa-home"></i>
+              </div>
+              <div class="house-info">
+                <h6 class="house-title">My Home</h6>
+                <p class="house-address">{{ myHouseAddress }}</p>
               </div>
             </div>
-          </div>
-          
-          <div v-else>
-            <p class="text-center text-muted py-3">Loading data...</p>
-          </div>
-          <i class="fas fa-chart-line" style=" position: absolute; bottom: 0.5rem; right: 1rem; font-size: 8rem; color: rgba(0, 0, 0, 0.05); pointer-events: none;"></i>
-        </div>
 
+            <div class="comparison-result">
+              <div class="comparison-icon" :class="{ positive: isPositiveComparison, negative: !isPositiveComparison }">
+                <i :class="isPositiveComparison ? 'fas fa-arrow-up' : 'fas fa-arrow-down'"></i>
+              </div>
+              <div class="comparison-details">
+                <span class="comparison-label">Consumption difference:</span>
+                <span class="comparison-value" :class="{ positive: isPositiveComparison, negative: !isPositiveComparison }">
+                  {{ comparisonValue }}
+                </span>
+              </div>
+            </div>
+
+            <div class="comparison-context">
+              <span class="context-text">
+                <i class="fas fa-users me-1"></i>
+                Comparing with <strong>{{ comparedHousesCount }}</strong> nearby houses
+              </span>
+            </div>
+          </div>
+
+          <div v-else class="no-data-state">
+            <i class="fas fa-info-circle me-2"></i>
+            No neighborhood data available
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -213,16 +235,16 @@ import VueApexCharts from "vue3-apexcharts";
 const appliancesStore = useAppliancesStore();
 const consumptionsStore = useConsumptionsStore(); 
 const goalsStore = useGoalsStore();
-
-
 const activeGoal = computed(() => goalsStore.activeGoal);
 
 onMounted(async () => {  
-  appliancesStore.fetchAppliances();
-  consumptionsStore.fetchPeriodComparison(selectedPeriod.value);
+  appliancesStore.fetchAppliances();  
+  consumptionsStore.fetchAllPeriodComparisons();
   consumptionsStore.fetchLatestReading();
   consumptionsStore.fetchSimilarHouses(); 
   consumptionsStore.fetchConsumptionHistory();
+
+    onBeforeUnmount(() => clearInterval(interval));
 
   await goalsStore.fetchGoals();
   if (goalsStore.activeGoal) {
@@ -232,8 +254,6 @@ onMounted(async () => {
   const interval = setInterval(() => {
     consumptionsStore.fetchLatestReading();
   }, 2 * 60 * 1000); 
-
-  onBeforeUnmount(() => clearInterval(interval));
 });
 
 ////////// GOALS ////////// 
@@ -261,6 +281,98 @@ const isGoalCompleted = computed(() => {
   return progress ? progress.isCompleted : false;
 });
 
+/////// GOALS CHART ///////
+const radialChartOptions = ref({
+  series: [0],
+  chart: {
+    height: 250,
+    type: 'radialBar',
+    toolbar: {
+      show: false
+    }
+  },
+  plotOptions: {
+    radialBar: {
+      startAngle: -135,
+      endAngle: 225,
+      hollow: {
+        margin: 0,
+        size: '70%',
+        background: '#fff',
+        dropShadow: {
+          enabled: true,
+          top: 3,
+          left: 0,
+          blur: 4,
+          opacity: 0.5
+        }
+      },
+      track: {
+        background: '#fff',
+        strokeWidth: '67%',
+        margin: 0,
+        dropShadow: {
+          enabled: true,
+          top: -3,
+          left: 0,
+          blur: 4,
+          opacity: 0.7
+        }
+      },
+      dataLabels: {
+        show: true,
+        name: {
+          offsetY: -10,
+          show: true,
+          color: '#888',
+          fontSize: '17px'
+        },
+        value: {
+          formatter: function(val) {
+            return parseInt(val);
+          },
+          color: '#111',
+          fontSize: '36px',
+          show: true,
+        }
+      }
+    }
+  },
+fill: {
+  type: 'gradient',
+  gradient: {
+    shade: 'dark',
+    type: 'horizontal',
+    shadeIntensity: 0.5,
+    gradientToColors: ['#dfb046'],
+    inverseColors: false,
+    opacityFrom: 1,
+    opacityTo: 1,
+    stops: [0, 100],
+    colorStops: [
+      {
+        offset: 0,
+        color: '#467054',
+        opacity: 1
+      },
+      {
+        offset: 100,
+        color: '#dfb046',
+        opacity: 1
+      }
+    ]
+  }
+},
+  stroke: {
+    lineCap: 'round'
+  },
+  labels: ['Progress'],
+});
+
+const radialSeries = computed(() => {
+  return [goalProgressPercentage.value];
+});
+
 
 ////////// CURRENT CONSUMPTION //////////
 const currentConsumption = computed(() => {
@@ -268,8 +380,7 @@ const currentConsumption = computed(() => {
   return value !== undefined && value !== null ? parseFloat(value).toFixed(2) : 'N/A';
 });
 
-
-/////// CHART ///////
+/////// Current Consumption CHART ///////
 const apexchart = VueApexCharts;
 
 const series = computed(() => {
@@ -295,7 +406,6 @@ const series = computed(() => {
     data: finalData
   }];
 });
-
 
 const chartOptions = ref({
   chart: {
@@ -351,12 +461,7 @@ const chartOptions = ref({
   }
 });
 
-
-
 ////////// NEIGHBORHOOD //////////
-// Selected period for consumption data (default is 'month')
-const selectedPeriod = ref('month');
-
 // Computed property to determine if the consumption comparison is positive
 const isPositiveComparison = computed(() => {
   const comparison = consumptionsStore.similarHouses?.comparison || ''
@@ -377,15 +482,6 @@ const comparedHousesCount = computed(() =>
 const comparisonValue = computed(() =>
   consumptionsStore.similarHouses?.comparison || 'N/A'
 )
-
-// Fetch new comparison data when the period changes
-function onPeriodChange() {
-  consumptionsStore.fetchPeriodComparison(selectedPeriod.value);
-}
-
-// Computed property to get the period comparison data
-const periodComparisonData = computed(() => consumptionsStore.periodComparison || {});
-
 
 ///////// TOP APPLIANCE ////////
 // Sort appliances by consumption
@@ -418,14 +514,78 @@ const topDevicePercentage = computed(() => {
   return ((topDevice.value.dailyConsumption / totalConsumption.value) * 100).toFixed(0);
 });
 
-// Expose
-const components = {
-  apexchart: VueApexCharts,
-};
+/////////  PERIOD AVERAGE ////////
+// PERIOD COMPARISON CHART //
+const periodChartOptions = ref({
+  chart: {
+    type: 'polarArea',
+    animations: {
+      enabled: true,
+      easing: 'easeinout',
+      speed: 800
+    }
+  },
+  labels: ['Daily', 'Weekly', 'Monthly'],
+  colors: ['#467054', '#dcbb73','#c79c3e'],
+  fill: {
+    opacity: 1 
+  },
+  stroke: {
+    width: 0,
+    colors: undefined
+  },
+  yaxis: {
+    show: false
+  },
+  legend: {
+    position: 'bottom',
+    fontSize: '13px',
+    fontFamily: 'inherit',
+    labels: {
+      colors: '#467054',
+      useSeriesColors: false
+    },
+    markers: {
+      width: 10,
+      height: 10,
+      radius: 5,
+      offsetX: -5
+    }
+  },
+  plotOptions: {
+    polarArea: {
+      rings: {
+        strokeWidth: 0
+      },
+      spokes: {
+        strokeWidth: 0
+      }
+    }
+  },
+  tooltip: {
+    enabled: true,
+    y: {
+      formatter: (val) => `${val.toFixed(2)} kW`,
+      title: {
+        formatter: (seriesName) => ` ${seriesName.toLowerCase()} average`
+      }
+    }
+  },
+  dataLabels: {
+    enabled: false // Remove porcentagens internas
+  }
+})
 
+const periodSeries = computed(() => {
+  if (!consumptionsStore.periodComparison) return [0, 0, 0];
+  
+  return [
+    consumptionsStore.periodComparison.daily || 0,
+    consumptionsStore.periodComparison.weekly || 0,
+    consumptionsStore.periodComparison.monthly || 0
+  ];
+});
 </script>
-
-
 
 <style scoped lang="scss">
 .dashboard-container {
@@ -455,7 +615,6 @@ const components = {
     border-color: #dfb046;
   }
 }
-
 .main-widget {
   grid-column: span 2;
   grid-row: span 1;
@@ -473,7 +632,6 @@ const components = {
     }
   }
 }
-
 .medium-widget {
   grid-row: span 1;
 }
@@ -515,70 +673,7 @@ const components = {
   background-color: rgba(223, 176, 70, 0.1);
 }
 
-.device-info {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-  
-  .device-icon {
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 1.25rem;
-  }
-}
-
-.progress {
-  height: 6px;
-  background-color: rgba(0, 0, 0, 0.05);
-  border-radius: 3px;
-  overflow: hidden;
-  
-  .progress-bar {
-    height: 100%;
-  }
-}
-
-.comparison-item {
-  display: flex;
-  justify-content: space-between;
-  margin-bottom: 0.5rem;
-}
-
-.circular-progress {
-  position: relative;
-  width: 100px;
-  height: 100px;
-  
-  .circle-progress {
-    width: 100%;
-    height: 100%;
-    border-radius: 50%;
-    background: conic-gradient(#467054 calc(var(--progress) * 3.6deg), #f0f0f0 0deg);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    
-    &::before {
-      content: '';
-      position: absolute;
-      width: 70px;
-      height: 70px;
-      background: white;
-      border-radius: 50%;
-    }
-    
-    span {
-      position: relative;
-      z-index: 1;
-      font-size: 1.4rem;
-    }
-  }
-}
-
+// PERIOD AVERAGE CARD
 .time-comparison-chart {
   display: flex;
   gap: 1rem;
@@ -606,8 +701,6 @@ const components = {
     }
   }
 }
-
-
 .text-secondary {
   color: #6c757d !important;
 }
@@ -629,39 +722,378 @@ const components = {
   }
 }
 
+// NEIGHBORHOOD CARD
+.neighborhood-widget {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
 
-
-/* Mínimos ajustes para o card */
-.widget-card.location-comparison {
-  font-size: 0.9rem;
-  color: #333;
-}
-
-.neighborhood-subtitles{
-  margin-top: 2rem;
-  font-size: 1rem;
-  color: #467054;
-}
-
-.house-address{
-  // color: #467054;
-}
-
-/* Texto de comparação no centro e com cor verde (ou vermelho) */
-.comparison-text {
+.comparison-context {
   text-align: center;
-  font-size: 1rem;
-  font-weight: 600;
-  margin-top: 2rem;
-  color: #dfb046;
+  margin-top: 1.5rem;
+  padding-top: 1rem;
+  position: relative;
+  
+  &::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 25%;
+    right: 25%;
+    height: 1px;
+    background: rgba(70, 112, 84, 0.2);
+  }
+
+    .context-text {
+    font-size: 0.85rem;
+    color: #6c757d;
+    display: inline-flex;
+    align-items: center; 
+    .fa-users {
+      color: #467054;
+      font-size: 0.9rem;
+      margin-right: 0.4rem;
+    }
+    strong {
+      color: #467054;
+      font-weight: 600;
+      margin: 0 0.2rem;
+    }
+  }
+    .fa-neighborhood {
+      color: #dfb046;
+      font-size: 1rem;
+    }
+
+    strong {
+      font-weight: 600;
+      color: #467054;
+    }
+  }
+
+  .neighborhood-header {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 1.25rem;
+    position: relative;
+
+    .icon {
+      font-size: 1.25rem;
+    }
+
+    .title {
+      margin: 0;
+      font-weight: 600;
+      color: #467054;
+      font-size: 1.1rem;
+    }
+
+    .house-count-badge {
+      background-color: rgba(70, 112, 84, 0.1);
+      color: #467054;
+      padding: 0.25rem 0.5rem;
+      border-radius: 1rem;
+      font-size: 0.75rem;
+      font-weight: 600;
+      margin-left: auto;
+    }
+  }
+
+  .loading-state,
+  .error-state,
+  .no-data-state {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-grow: 1;
+    padding: 1.5rem;
+    text-align: center;
+    color: #6c757d;
+  }
+
+  .error-state {
+    color: #dc3545;
+  }
+
+  .my-house-card {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    background-color: rgba(70, 112, 84, 0.05);
+    border-radius: 0.75rem;
+    padding: 1rem;
+    margin-bottom: 1.5rem;
+
+    .house-icon {
+      width: 2.5rem;
+      height: 2.5rem;
+      background-color: #467054;
+      color: white;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.25rem;
+    }
+
+    .house-info {
+      .house-title {
+        margin: 0;
+        font-size: 1rem;
+        color: #467054;
+        font-weight: 600;
+      }
+
+      .house-address {
+        margin: 0;
+        font-size: 0.85rem;
+        color: #6c757d;
+      }
+    }
+  }
+  .comparison-result {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    background-color: white;
+    border-radius: 0.75rem;
+    padding: 1rem;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    margin-top: auto;
+
+    .comparison-icon {
+      width: 2.5rem;
+      height: 2.5rem;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1rem;
+
+      &.positive {
+        background-color: rgba(223, 176, 70, 0.2);
+        color: #dfb046;
+      }
+
+      &.negative {
+        background-color: rgba(70, 112, 84, 0.2);
+        color: #467054;
+      }
+    }
+
+    .comparison-details {
+      display: flex;
+      flex-direction: column;
+
+      .comparison-label {
+        font-size: 0.85rem;
+        color: #6c757d;
+      }
+
+      .comparison-value {
+        font-weight: 700;
+        font-size: 1.1rem;
+
+        &.positive {
+          color: #dfb046;
+        }
+
+        &.negative {
+          color: #467054;
+        }
+      }
+    }
+  }
 }
 
-.comparison-text.positive {
-  color: #dfb046; /* verde mais carregado */
+// GOAL PROGRESS CARD
+.goal-comparison {
+  .widget-content {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    height: calc(100% - 3rem);
+  }
+
+  .goal-details {
+    background-color: #f8f9fa;
+    border-radius: 0.5rem;
+    padding: 0.4rem 1rem;
+    margin-top: 0.1rem;
+  }
+
+  .stat-item {
+    margin-bottom: 0.75rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 1px solid rgba(70, 112, 84, 0.1);
+
+    &:last-child {
+      margin-bottom: 0;
+      padding-bottom: 0;
+      border-bottom: none;
+    }
+  }
+
+  .stat-label {
+    font-weight: 600;
+    color: #555;
+    font-size: 0.9rem;
+  }
+
+  .stat-value {
+    font-weight: 700;
+    font-size: 0.95rem;
+  }
+}
+.time-comparison {
+  .widget-content {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    height: calc(100% - 3rem);
+    
+    #period-chart {
+      margin: -1rem auto;
+    }
+    
+    .text-center {
+      margin-top: auto;
+      padding-bottom: 0.5rem;
+    }
+  }
+  
+  .apexcharts-legend-text {
+    color: #467054 !important;
+    font-weight: 500 !important;
+  }
+  
+  .apexcharts-tooltip {
+    background: #fff !important;
+    border: 1px solid #467054 !important;
+    color: #467054 !important;
+    
+    .apexcharts-tooltip-title {
+      background: #f8f9fa !important;
+      border-bottom: 1px solid #467054 !important;
+      color: #467054 !important;
+    }
+  }
 }
 
-.comparison-text.negative {
-  color:#467054; 
-}
+// TOP CONSUMING DEVICE
+.top-device {
+  .champion-device {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 0.8rem;
+    background: rgba(223, 176, 70, 0.05);
+    border-radius: 10px;
+    margin-bottom: 1rem;
+    border: 1px solid rgba(70, 112, 84, 0.1);
+  }
 
+  .device-medal {
+    .medal-circle {
+      width: 45px;
+      height: 45px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-size: 1.2rem;
+      background: linear-gradient(135deg, #dfb046, #f8d37a);
+    }
+  }
+
+.device-info {
+  display: flex;
+  flex-direction: column;
+}
+.device-name {
+  font-size: 1.1rem;
+}
+.device-stats-row {
+  display: flex;
+  width: 100%;
+}
+.energy-meter {
+    margin: 0.8rem 0;
+    
+    .meter-track {
+      height: 0.5rem;
+      background: rgba(70, 112, 84, 0.1);
+      border-radius: 3px;
+    }
+    
+    .meter-progress {
+      height: 100%;
+      background: linear-gradient(to right, #dfb046, #467054);
+      border-radius: 0.5rem;
+    }
+    
+    .meter-labels {
+      font-size: 0.65rem;
+      margin-top: 0.25rem;
+      display: flex;
+      justify-content: space-between;
+      font-weight: 500;
+    }
+  }
+
+  .contenders-title {
+    font-size: 0.85rem;
+    margin-bottom: 0.5rem;
+    color: #467054;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+  }
+
+  .device-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .contender-device {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 0.5rem;
+    font-size: 0.85rem;
+    
+    &:not(:last-child) {
+      border-bottom: 1px solid rgba(0,0,0,0.05);
+    }
+  }
+
+  .contender-icon {
+    width: 26px;
+    height: 26px;
+    background: rgba(70, 112, 84, 0.1);
+    color: #467054;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.7rem;
+    flex-shrink: 0;
+  }
+
+  .contender-name {
+    flex-grow: 1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .contender-value {
+    font-weight: 600;
+    color: #467054;
+    flex-shrink: 0;
+  }
+}
 </style>

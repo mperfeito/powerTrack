@@ -28,37 +28,42 @@ export const useConsumptionsStore = defineStore('consumptions', {
       }
     },
 
-  async fetchConsumptionHistory(limit = 8) {
-    this.loading = true;
-    this.error = null;
-    try {
-      const response = await consumptionsApi.getConsumptionHistory(limit);      
-      this.consumptionHistory = response.data.slice().reverse().map(item => parseFloat(item.consumption_value));
-
-    } catch (err) {
-      console.error('fetchConsumptionHistory error:', err);
-      this.error = err.response?.data?.message || err.message || 'Error fetching consumption history';
-
-    } finally {
-      this.loading = false;
-    }
-  },
-
-    async fetchPeriodComparison(period) {
+    async fetchConsumptionHistory(limit = 8) {
       this.loading = true;
       this.error = null;
       try {
-        const response = await consumptionsApi.getPeriodComparison(period);
-        console.log('fetchPeriodComparison response:', response.data);
+        const response = await consumptionsApi.getConsumptionHistory(limit);      
+        this.consumptionHistory = response.data.slice().reverse().map(item => parseFloat(item.consumption_value));
 
-
-        this.periodComparison = {
-          lastPeriod: parseFloat(response.data.avg_consumption) * 0.9,
-          currentPeriod: parseFloat(response.data.avg_consumption)
-        };
       } catch (err) {
-        console.error('fetchPeriodComparison error:', err);
-        this.error = err.response?.data?.message || err.message || 'Error fetching period comparison';
+        console.error('fetchConsumptionHistory error:', err);
+        this.error = err.response?.data?.message || err.message || 'Error fetching consumption history';
+
+      } finally {
+        this.loading = false;
+      }
+    },
+
+    async fetchAllPeriodComparisons() {
+      this.loading = true;
+      this.error = null;
+      try {
+        const [daily, weekly, monthly] = await Promise.all([
+          consumptionsApi.getPeriodComparison('day'),
+          consumptionsApi.getPeriodComparison('week'),
+          consumptionsApi.getPeriodComparison('month')
+        ]);
+        
+        this.periodComparison = {
+          daily: parseFloat(daily.data.avg_consumption),
+          weekly: parseFloat(weekly.data.avg_consumption),
+          monthly: parseFloat(monthly.data.avg_consumption),
+          currentPeriod: this.periodComparison?.currentPeriod || 0 // Mantém o atual se já existir
+        };
+        
+      } catch (err) {
+        console.error('fetchAllPeriodComparisons error:', err);
+        this.error = err.response?.data?.message || err.message || 'Error fetching period comparisons';
       } finally {
         this.loading = false;
       }
@@ -76,7 +81,6 @@ export const useConsumptionsStore = defineStore('consumptions', {
         this.loadingSimilarHouses = false;
       }
     },
-
 },
 
   getters: {

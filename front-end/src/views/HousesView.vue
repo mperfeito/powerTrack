@@ -10,75 +10,66 @@
       </div>
 
       <div class="house-form settings-card p-4 mb-4">
-  <h5 class="text-dark mb-3">
-    <i class="fas" :class="isEditing ? 'fa-edit' : 'fa-plus-circle'" style="color: #467054;"></i>
-    {{ isEditing ? 'Edit House' : 'Add New House' }}
-  </h5>
-  
-  <div class="row g-3">
-    <div class="col-md-3">
-      <label class="form-label text-dark">Name</label>
-      <input
-        type="text"
-        class="form-control settings-input"
-        v-model="currentHouse.name"
-        placeholder="e.g. Beach House"
-        @keyup.enter="saveHouse"
-      />
-    </div>
-    
-    <div class="col-md-2">
-      <label class="form-label text-dark">City</label>
-      <input
-        type="text"
-        class="form-control settings-input"
-        v-model="currentHouse.city"
-        placeholder="e.g. Lisbon"
-        @keyup.enter="saveHouse"
-      />
-    </div>
-    
-    <div class="col-md-3">
-      <label class="form-label text-dark">Address</label>
-      <input
-        type="text"
-        class="form-control settings-input"
-        v-model="currentHouse.address"
-        placeholder="e.g. 123 Ocean Drive"
-        @keyup.enter="saveHouse"
-      />
-    </div>
-    
-    <div class="col-md-2">
-      <label class="form-label text-dark">Postal Code</label>
-      <input
-        type="text"
-        class="form-control settings-input"
-        v-model="currentHouse.postalCode"
-        placeholder="e.g. 1234-567"
-        @keyup.enter="saveHouse"
-      />
-    </div>
-    
-    <div class="col-md-2 d-flex align-items-end gap-2">
-      <button 
-        class="btn btn-primary flex-grow-1"
-        @click="saveHouse"
-        :disabled="!currentHouse.name"
-      >
-        <i class="fas fa-save"></i>
-        {{ isEditing ? 'Update' : 'Add' }}
-      </button>
-      <button 
-        v-if="isEditing"
-        class="btn btn-outline-secondary"
-        @click="resetForm"
-      >
-        <i class="fas fa-times"></i>
-      </button>
-    </div>
-  </div>
-</div>
+        <h5 class="text-dark mb-3">
+          <i class="fas" :class="isEditing ? 'fa-edit' : 'fa-plus-circle'" style="color: #467054;"></i>
+          {{ isEditing ? 'Edit House' : 'Add New House' }}
+        </h5>
+        
+        <div class="row g-3">
+          <div class="col-md-2">
+            <label class="form-label text-dark">City</label>
+            <input
+              type="text"
+              class="form-control settings-input"
+              v-model="currentHouse.city"
+              placeholder="e.g. Lisbon"
+              @keyup.enter="saveHouse"
+              required
+            />
+          </div>
+          
+          <div class="col-md-5">
+            <label class="form-label text-dark">Address</label>
+            <input
+              type="text"
+              class="form-control settings-input"
+              v-model="currentHouse.address"
+              placeholder="e.g. 123 Ocean Drive"
+              @keyup.enter="saveHouse"
+              required
+            />
+          </div>
+          
+          <div class="col-md-3">
+            <label class="form-label text-dark">Postal Code</label>
+            <input
+              type="text"
+              class="form-control settings-input"
+              v-model="currentHouse.postalCode"
+              placeholder="e.g. 1234-567"
+              @keyup.enter="saveHouse"
+            />
+          </div>
+          
+          <div class="col-md-2 d-flex align-items-end gap-2">
+            <button 
+              class="btn btn-primary flex-grow-1"
+              @click="saveHouse"
+              :disabled="!currentHouse.address"
+            >
+              <i class="fas fa-save"></i>
+              {{ isEditing ? 'Update' : 'Add' }}
+            </button>
+            <button 
+              v-if="isEditing"
+              class="btn btn-outline-secondary"
+              @click="resetForm"
+            >
+              <i class="fas fa-times"></i>
+            </button>
+          </div>
+        </div>
+      </div>
 
       <div class="house-list-horizontal">
         <div
@@ -89,7 +80,7 @@
         >
           <div class="house-info">
             <div class="d-flex align-items-center gap-2 mb-2">
-              <h5 class="text-dark m-0">{{ house.name }}</h5>
+              <h5 class="text-dark m-0">{{ house.address }}</h5>
               <span v-if="house.active" class="active-badge">
                 <i class="fas fa-check-circle me-1"></i> Active
               </span>
@@ -98,10 +89,6 @@
             <div class="house-details">
               <div class="detail-item">
                 <i class="fas fa-map-marker-alt me-2" style="color: #467054;"></i>
-                <span>{{ house.address }}</span>
-              </div>
-              <div class="detail-item">
-                <i class="fas fa-city me-2" style="color: #467054;"></i>
                 <span>{{ house.city }}, {{ house.postalCode }}</span>
               </div>
             </div>
@@ -149,7 +136,6 @@ const housesStore = useHousesStore();
 const isEditing = ref(false);
 const currentHouse = ref({
   id: null,
-  name: "",
   city: "",
   address: "",
   postalCode: "",
@@ -162,7 +148,7 @@ housesStore.fetchActiveHouse();
 const houses = computed(() => {
   return housesStore.houses.map(house => ({
     id: house.id_house,
-    name: house.name,
+    name: `${house.address}, ${house.city}`,
     city: house.city,
     address: house.address,
     postalCode: house.postal_code || house.postalCode,
@@ -173,7 +159,6 @@ const houses = computed(() => {
 const resetForm = () => {
   currentHouse.value = {
     id: null,
-    name: "",
     city: "",
     address: "",
     postalCode: "",
@@ -189,19 +174,17 @@ const editHouse = (house) => {
 };
 
 const saveHouse = async () => {
-  if (!currentHouse.value.name) return;
+  if (!currentHouse.value.address) return; 
 
   try {
     if (isEditing.value) {
       await housesStore.updateHouse(currentHouse.value.id, {
-        name: currentHouse.value.name,
         city: currentHouse.value.city,
         address: currentHouse.value.address,
         postal_code: currentHouse.value.postalCode,
       });
     } else {
       await housesStore.createHouse({
-        name: currentHouse.value.name,
         city: currentHouse.value.city,
         address: currentHouse.value.address,
         postal_code: currentHouse.value.postalCode,
@@ -210,20 +193,20 @@ const saveHouse = async () => {
     await housesStore.fetchHouses();
     resetForm();
   } catch (error) {
-    alert('Erro ao salvar casa: ' + error.message);
+    alert('Error saving house: ' + error.message);
   }
 };
 
 const deleteHouse = async (id) => {
   const houseToDelete = houses.value.find(h => h.id === id);
-  if (houseToDelete?.active) return alert('Não pode deletar a casa ativa.');
+  if (houseToDelete?.active) return alert('Cannot delete the active house.');
 
-  if (confirm(`Tem certeza que deseja deletar ${houseToDelete.name}?`)) {
+  if (confirm(`Are you sure you want to delete ${houseToDelete.address}?`)) {
     try {
       await housesStore.deleteHouse(id);
       await housesStore.fetchHouses();
     } catch (error) {
-      alert('Erro ao deletar casa: ' + error.message);
+      alert('Error deleting house: ' + error.message);
     }
   }
 };
@@ -233,12 +216,10 @@ const setActiveHouse = async (id) => {
     await housesStore.setActiveHouse(id);
     await housesStore.fetchActiveHouse();
   } catch (error) {
-    alert('Erro ao definir casa ativa: ' + error.message);
+    alert('Error setting active house: ' + error.message);
   }
 };
 </script>
-
-
 
 <style scoped lang="scss">
 .houses-container {
