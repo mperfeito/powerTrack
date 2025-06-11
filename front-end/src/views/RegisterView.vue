@@ -14,18 +14,6 @@
               </div>
 
               <form @submit.prevent="handleRegister">
-                <!-- Success Message -->
-                <div v-if="successMessage" class="alert alert-success mb-4">
-                  <i class="fas fa-check-circle me-2"></i>
-                  {{ successMessage }}
-                </div>
-
-                <!-- Error Message -->
-                <div v-if="errorMessage" class="alert alert-danger mb-4">
-                  <i class="fas fa-exclamation-circle me-2"></i>
-                  {{ errorMessage }}
-                </div>
-
                 <div class="row">
                   <div class="col-md-6 mb-4">
                     <label for="firstName" class="form-label">First Name</label>
@@ -127,6 +115,17 @@
                     <a href="#" class="text-primary">Terms of Service</a> and
                     <a href="#" class="text-primary">Privacy Policy</a>
                   </label>
+                </div>
+                <!-- Success Message -->
+                <div v-if="successMessage" class="alert alert-success mb-4">
+                  <i class="fas fa-check-circle me-2"></i>
+                  {{ successMessage }}
+                </div>
+
+                <!-- Error Message -->
+                <div v-if="errorMessage" class="alert alert-danger mb-4">
+                  <i class="fas fa-exclamation-circle me-2"></i>
+                  {{ errorMessage }}
                 </div>
 
                 <button

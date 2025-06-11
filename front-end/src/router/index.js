@@ -22,6 +22,19 @@ const router = createRouter({
       component: () => import("../views/RegisterView.vue"),
       meta: { requiresGuest: true }
     },
+    // Admin routes
+    {
+      path: "/admin",
+      name: "admin",
+      redirect: '/admin/users',
+      meta: { requiresAuth: true, requiresAdmin: true }
+    },
+    {
+      path: "/admin/users",
+      name: "admin-users",
+      component: () => import("../views/AdminView.vue"),
+      meta: { requiresAuth: true, requiresAdmin: true }
+    },
     {
       path: "/dashboard",
       name: "dashboard",
@@ -57,6 +70,12 @@ const router = createRouter({
       name: "goals",
       component: () => import("../views/GoalsView.vue"),
       meta: { requiresAuth: true }
+    }, 
+    { 
+      path:"/admin", 
+      name: "admin", 
+      component: () => import("../views/AdminView.vue"),
+      meta: { requiresAuth: true, requiresAdmin: true }
     },
     {
       path: "/:pathMatch(.*)*",
@@ -69,23 +88,41 @@ const router = createRouter({
 router.beforeEach(async (to, from, next) => {
   const authStore = useAuthStore();
   
+  // If route requires authentication
   if (to.meta.requiresAuth) {
     if (authStore.isAuthenticated) {
-      next();
+      // If route requires admin privileges
+      if (to.meta.requiresAdmin) {
+        if (authStore.isAdmin) {
+          next();
+        } else {
+          next('/dashboard'); // Redirect non-admins to dashboard
+        }
+      } else {
+        next();
+      }
     } else {
+      // Not authenticated, redirect to login with return url
       next({
         path: '/login',
         query: { redirect: to.fullPath }
       });
     }
   } 
+  // If route requires guest (non-authenticated) status
   else if (to.meta.requiresGuest) {
     if (authStore.isAuthenticated) {
-      next('/dashboard');
+      // Redirect authenticated users to appropriate dashboard
+      if (authStore.isAdmin) {
+        next('/admin');
+      } else {
+        next('/dashboard');
+      }
     } else {
       next();
     }
   } 
+  // All other routes
   else {
     next();
   }

@@ -1,3 +1,4 @@
+//HOUSES.ROUTE.JS
 import express from "express";
 import {
   getAuthHouses,
@@ -12,7 +13,6 @@ import { validateFields } from "../middlewares/validateFields.js";
 const router = express.Router();
 
 const houseFields = ["address", "postal_code", "city"];
-
 
 
 router.get("/", getAuthHouses); // GET /api/users/me/houses ☑️
