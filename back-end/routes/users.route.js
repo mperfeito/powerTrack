@@ -5,7 +5,9 @@ import {
   register,
 
   getAuthUser,
-  updateAuthUser,
+  updateAuthUser, 
+  getUsersAdmin, 
+  deleteUser
 } from "../controllers/users.controller.js";
 
 
@@ -28,6 +30,10 @@ router.patch(
   authMiddleware,
   validateFields(registerFields, "any"),
   updateAuthUser
-); //PATCH api/users/me ☑️
+); //PATCH api/users/me ☑️ 
+
+router.get("/admin", authMiddleware, getUsersAdmin); // GET api/users/admin ☑️  
+router.delete("/:id",authMiddleware, deleteUser); // DELETE api/users/:id  
+
 
 export default router;

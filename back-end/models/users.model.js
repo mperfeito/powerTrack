@@ -78,4 +78,61 @@ export const getAllUsers = async () => {
     console.error("Error fetching all the users:", err);
     throw err;
   }
+}; 
+
+export const getAllUsersWithHouses = async () => {
+  try {
+    const [results] = await db.execute(`
+      SELECT 
+        u.*,
+        h.id_house AS house_id,
+        h.address AS house_address,
+        h.postal_code AS house_postal_code,
+        h.city AS house_city,
+        h.active AS house_active
+      FROM users u
+      LEFT JOIN houses h ON u.id_user = h.id_user
+      ORDER BY u.id_user, h.id_house
+    `);
+
+    const usersMap = new Map();
+    
+    results.forEach(row => {
+      if (!usersMap.has(row.id_user)) {
+        const { house_id, house_address, house_postal_code, house_city, house_active, ...user } = row;
+        usersMap.set(row.id_user, {
+          ...user,
+          houses: []
+        });
+      }
+      
+      if (row.house_id) {
+        usersMap.get(row.id_user).houses.push({
+          id_house: row.house_id,
+          id_user: row.id_user,
+          address: row.house_address,
+          postal_code: row.house_postal_code,
+          city: row.house_city,
+          active: row.house_active
+        });
+      }
+    });
+
+    return Array.from(usersMap.values());
+  } catch (err) {
+    console.error("Error fetching users with houses:", err);
+    throw err;
+  }
+}; 
+
+export const deleteUserModel = async (id) => {
+  try {
+    const [result] = await db.execute("DELETE FROM users WHERE id_user = ?", [
+      id,
+    ]);
+    return result.affectedRows > 0;
+  } catch (err) {
+    console.error("Error deleting user:", err);
+    throw err;
+  }
 };

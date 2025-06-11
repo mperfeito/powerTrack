@@ -160,9 +160,6 @@ const setFilter = (filterType) => {
   activeFilter.value = filterType;
 };
 
-const formatDate = (timestamp) => {
-  return new Date(timestamp).toLocaleDateString();
-};
 
 const formatTime = (timestamp) => {
   return new Date(timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
