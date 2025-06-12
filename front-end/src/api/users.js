@@ -18,7 +18,7 @@ export default {
   }, 
 
   getUsersAdmin() {
-    return api.get("/users/admin"); 
+    return api.get("/users"); 
   },  
 
   deleteUser(id) {
