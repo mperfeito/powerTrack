@@ -132,9 +132,9 @@ export const useGoalsStore = defineStore('goals', {
       }
       
       try {
-        console.log('Deleting goal with ID:', id); // Debug log
+        console.log('Deleting goal with ID:', id); 
         await goalsApi.deleteGoal(id);
-        await this.fetchGoals(); // Refresh the goals list after deletion
+        await this.fetchGoals(); 
       } catch (error) {
         console.error('Failed to delete goal:', error);
         throw error;

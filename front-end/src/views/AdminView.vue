@@ -32,7 +32,7 @@
         <div
           class="user-card"
           v-for="user in filteredUsers"
-          :key="user.id"
+          :key="user.id_user"
         >
           <div class="user-header">
             <div class="user-avatar">
@@ -55,14 +55,14 @@
               </h6>
               <button
                 class="btn btn-icon btn-sm"
-                @click="toggleUserHouses(user.id)"
-                :title="expandedUsers.includes(user.id) ? 'Collapse' : 'Expand'"
+                @click="toggleUserHouses(user.id_user)"
+                :title="expandedUser === user.id_user ? 'Collapse' : 'Expand'"
               >
-                <i class="fas" :class="expandedUsers.includes(user.id) ? 'fa-chevron-up' : 'fa-chevron-down'"></i>
+                <i class="fas" :class="expandedUser === user.id_user ? 'fa-chevron-up' : 'fa-chevron-down'"></i>
               </button>
             </div>
             
-            <div class="houses-list" v-if="expandedUsers.includes(user.id)">
+            <div class="houses-list" v-if="expandedUser === user.id_user">
               <div
                 class="house-item"
                 v-for="house in user.houses"
@@ -72,15 +72,6 @@
                   <span class="house-name">{{ house.name }}</span>
                   <span class="house-address">{{ house.address }}</span>
                 </div>
-                <div class="house-actions">
-                  <button
-                    class="btn btn-icon btn-sm btn-danger"
-                    @click="confirmDeleteHouse(house.id)"
-                    title="Delete"
-                  >
-                    <i class="fas fa-trash-alt"></i>
-                  </button>
-                </div>
               </div>
             </div>
           </div>
@@ -88,7 +79,7 @@
           <div class="user-actions">
             <button
               class="btn btn-icon btn-danger"
-              @click="confirmDeleteUser(user.id)"
+              @click="confirmDeleteUser(user.id_user)"
               title="Delete User"
             >
               <i class="fas fa-trash-alt"></i>
@@ -102,16 +93,24 @@
 </template>
 
 <script setup>
-import { onMounted } from 'vue';
+import { onMounted, ref } from 'vue';
 import { storeToRefs } from 'pinia';
 import SidebarAdmin from "@/components/SidebarAdmin.vue"; 
-import { useHousesStore } from '@/stores/housesStore';
 import { useAdminStore } from '@/stores/adminStore';
 
-const housesStore = useHousesStore();
 const adminStore = useAdminStore();
-const { filteredUsers, expandedUsers, searchQuery } = storeToRefs(adminStore);
-const { fetchUsers, toggleUserHouses, deleteUser } = adminStore;
+const { filteredUsers, searchQuery } = storeToRefs(adminStore);
+const { fetchUsers, deleteUser } = adminStore;
+
+const expandedUser = ref(null);
+
+function toggleUserHouses(userId) {
+  if (expandedUser.value === userId) {
+    expandedUser.value = null;
+  } else {
+    expandedUser.value = userId;
+  }
+}
 
 onMounted(() => {
   fetchUsers();
@@ -122,26 +121,15 @@ async function confirmDeleteUser(userId) {
     try {
       await deleteUser(userId);
     } catch (err) {   
-    }
-  }
-}
-
-async function confirmDeleteHouse(houseId) {
-  if (confirm("Are you sure you want to delete this house?")) {
-    try {
-      await housesApi.deleteHouse(houseId);
-      await fetchUsers(); 
-    } catch (err) {
-      adminStore.error = err.response?.data?.error || 'Failed to delete house';
-      console.error('Error deleting house:', err);
+      console.error('Error deleting user:', err);
     }
   }
 }
 </script>
 
+<style scoped lang="scss"> 
 
-<style scoped lang="scss">
-.admin-container {
+.admin-container { 
   background: white;
   min-height: 100vh;
   color: #212529;
@@ -267,11 +255,6 @@ async function confirmDeleteHouse(houseId) {
     font-size: 0.85rem;
     color: #6c757d;
   }
-}
-
-.house-actions {
-  display: flex;
-  gap: 0.5rem;
 }
 
 .user-actions {

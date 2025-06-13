@@ -67,7 +67,8 @@ export default {
 <style lang="scss" scoped>
 .sidebar {
   width: 250px;
-  height: 100vh;
+  height: 100vh; 
+  overflow-y: auto;
   background: linear-gradient(180deg, #355943 0%, #467054 100%);
   display: flex;
   flex-direction: column;
