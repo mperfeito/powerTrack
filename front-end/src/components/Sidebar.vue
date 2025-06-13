@@ -92,8 +92,10 @@ export default {
   flex-direction: column;
   padding: 2rem 1rem;
   box-shadow: 5px 0 15px rgba(0, 0, 0, 0.1);
-  position: relative;
-  overflow: hidden;
+  position: fixed;
+  left: 0;
+  top: 0;
+  z-index: 1000;
 }
 
 .logo-container {
@@ -126,12 +128,19 @@ export default {
   }
 }
 
-.nav-menu {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-  flex-grow: 1;
-}
+  .nav-menu {
+    flex: 1;
+    overflow-y: auto;
+    scrollbar-width: thin;
+    margin-bottom: 1rem;
+
+    &::-webkit-scrollbar {
+      width: 4px;
+    }
+    &::-webkit-scrollbar-thumb {
+      background: rgba(70, 112, 84, 0.5);
+      border-radius: 2px;
+    }}
 
 .nav-item {
   display: flex;
