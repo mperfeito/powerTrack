@@ -196,7 +196,7 @@ export function startNotificationScheduler() {
   });
 
 
-  cron.schedule('0 2 * * *', async () => {
+  cron.schedule('*/30 * * * *', async () => {
     console.log('Running daily peak hour checks...');
     try {
       const activeHouses = await getAllActiveHouses();
@@ -209,7 +209,7 @@ export function startNotificationScheduler() {
   });
 
 
-  cron.schedule('0 0 * * *', async () => {
+  cron.schedule('*/30 * * * *', async () => {
     console.log('Running daily goal checks...');
     try {
       const activeHouses = await getAllActiveHouses();
