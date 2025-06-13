@@ -32,7 +32,7 @@
         <div
           class="user-card"
           v-for="user in filteredUsers"
-          :key="user.id"
+          :key="user.id_user"
         >
           <div class="user-header">
             <div class="user-avatar">
@@ -55,14 +55,14 @@
               </h6>
               <button
                 class="btn btn-icon btn-sm"
-                @click="toggleUserHouses(user.id)"
-                :title="expandedUsers.includes(user.id) ? 'Collapse' : 'Expand'"
+                @click="toggleUserHouses(user.id_user)"
+                :title="expandedUser === user.id_user ? 'Collapse' : 'Expand'"
               >
-                <i class="fas" :class="expandedUsers.includes(user.id) ? 'fa-chevron-up' : 'fa-chevron-down'"></i>
+                <i class="fas" :class="expandedUser === user.id_user ? 'fa-chevron-up' : 'fa-chevron-down'"></i>
               </button>
             </div>
             
-            <div class="houses-list" v-if="expandedUsers.includes(user.id)">
+            <div class="houses-list" v-if="expandedUser === user.id_user">
               <div
                 class="house-item"
                 v-for="house in user.houses"
@@ -72,15 +72,6 @@
                   <span class="house-name">{{ house.name }}</span>
                   <span class="house-address">{{ house.address }}</span>
                 </div>
-                <div class="house-actions">
-                  <button
-                    class="btn btn-icon btn-sm btn-danger"
-                    @click="deleteHouse(house.id)"
-                    title="Delete"
-                  >
-                    <i class="fas fa-trash-alt"></i>
-                  </button>
-                </div>
               </div>
             </div>
           </div>
@@ -88,7 +79,7 @@
           <div class="user-actions">
             <button
               class="btn btn-icon btn-danger"
-              @click="confirmDeleteUser(user.id)"
+              @click="confirmDeleteUser(user.id_user)"
               title="Delete User"
             >
               <i class="fas fa-trash-alt"></i>
@@ -102,203 +93,43 @@
 </template>
 
 <script setup>
-import SidebarAdmin from "@/components/SidebarAdmin.vue";
-import { ref, computed, onMounted } from "vue";
-import { Modal } from 'bootstrap';
+import { onMounted, ref } from 'vue';
+import { storeToRefs } from 'pinia';
+import SidebarAdmin from "@/components/SidebarAdmin.vue"; 
+import { useAdminStore } from '@/stores/adminStore';
 
-// Mock data - replace with actual API calls
-const users = ref([
-  {
-    id: 1,
-    first_name: "Admin",
-    last_name: "User",
-    email: "admin@example.com",
-    role: "admin",
-    houses: [
-      { id: 1, name: "Main Villa", address: "123 Admin St", square_meters: 200 },
-      { id: 2, name: "Summer House", address: "456 Beach Rd", square_meters: 150 }
-    ]
-  },
-  {
-    id: 2,
-    first_name: "John",
-    last_name: "Doe",
-    email: "john@example.com",
-    role: "user",
-    houses: [
-      { id: 3, name: "Family Home", address: "789 Main St", square_meters: 180 }
-    ]
-  },
-  {
-    id: 3,
-    first_name: "Jane",
-    last_name: "Smith",
-    email: "jane@example.com",
-    role: "user",
-    houses: []
-  }
-]);
+const adminStore = useAdminStore();
+const { filteredUsers, searchQuery } = storeToRefs(adminStore);
+const { fetchUsers, deleteUser } = adminStore;
 
-const searchQuery = ref("");
-const roleFilter = ref("all");
-const expandedUsers = ref([]);
-const isEditingUser = ref(false);
-const isEditingHouse = ref(false);
-const currentUser = ref(createEmptyUser());
-const currentHouse = ref(createEmptyHouse());
-const selectedUserId = ref(null);
-
-function createEmptyUser() {
-  return {
-    first_name: "",
-    last_name: "",
-    email: "",
-    role: "user",
-    password: "",
-    houses: []
-  };
-}
-
-function createEmptyHouse() {
-  return {
-    name: "",
-    address: "",
-    square_meters: null
-  };
-}
-
-function fetchUsers() {
-  // In a real app, this would be an API call
-  console.log("Fetching users with filters:", { search: searchQuery.value, role: roleFilter.value });
-}
+const expandedUser = ref(null);
 
 function toggleUserHouses(userId) {
-  const index = expandedUsers.value.indexOf(userId);
-  if (index > -1) {
-    expandedUsers.value.splice(index, 1);
+  if (expandedUser.value === userId) {
+    expandedUser.value = null;
   } else {
-    expandedUsers.value.push(userId);
+    expandedUser.value = userId;
   }
 }
-
-function editUser(user) {
-  currentUser.value = { ...user };
-  isEditingUser.value = true;
-  const modal = new Modal(document.getElementById('userModal'));
-  modal.show();
-}
-
-function openAddUserModal() {
-  currentUser.value = createEmptyUser();
-  isEditingUser.value = false;
-  const modal = new Modal(document.getElementById('userModal'));
-  modal.show();
-}
-
-function saveUser() {
-  if (isEditingUser.value) {
-    // Update existing user
-    const index = users.value.findIndex(u => u.id === currentUser.value.id);
-    if (index > -1) {
-      users.value[index] = { ...currentUser.value };
-    }
-  } else {
-    // Add new user
-    const newUser = {
-      ...currentUser.value,
-      id: users.value.length + 1,
-      houses: []
-    };
-    users.value.push(newUser);
-  }
-  
-  const modal = Modal.getInstance(document.getElementById('userModal'));
-  modal.hide();
-}
-
-function confirmDeleteUser(userId) {
-  if (confirm("Are you sure you want to delete this user and all their houses?")) {
-    deleteUser(userId);
-  }
-}
-
-function deleteUser(userId) {
-  users.value = users.value.filter(user => user.id !== userId);
-}
-
-function openAddHouseModal(userId) {
-  selectedUserId.value = userId;
-  currentHouse.value = createEmptyHouse();
-  isEditingHouse.value = false;
-  const modal = new Modal(document.getElementById('houseModal'));
-  modal.show();
-}
-
-function editHouse(house) {
-  currentHouse.value = { ...house };
-  isEditingHouse.value = true;
-  const modal = new Modal(document.getElementById('houseModal'));
-  modal.show();
-}
-
-function saveHouse() {
-  const user = users.value.find(u => u.id === selectedUserId.value);
-  if (!user) return;
-
-  if (isEditingHouse.value) {
-    // Update existing house
-    const index = user.houses.findIndex(h => h.id === currentHouse.value.id);
-    if (index > -1) {
-      user.houses[index] = { ...currentHouse.value };
-    }
-  } else {
-    // Add new house
-    const newHouse = {
-      ...currentHouse.value,
-      id: user.houses.length + 1
-    };
-    user.houses.push(newHouse);
-  }
-  
-  const modal = Modal.getInstance(document.getElementById('houseModal'));
-  modal.hide();
-}
-
-function deleteHouse(houseId) {
-  if (confirm("Are you sure you want to delete this house?")) {
-    users.value.forEach(user => {
-      user.houses = user.houses.filter(house => house.id !== houseId);
-    });
-  }
-}
-
-const filteredUsers = computed(() => {
-  let result = users.value;
-  
-  if (searchQuery.value) {
-    const query = searchQuery.value.toLowerCase();
-    result = result.filter(user => 
-      user.first_name.toLowerCase().includes(query) ||
-      user.last_name.toLowerCase().includes(query) ||
-      user.email.toLowerCase().includes(query)
-    );
-  }
-  
-  if (roleFilter.value !== "all") {
-    result = result.filter(user => user.role === roleFilter.value);
-  }
-  
-  return result;
-});
 
 onMounted(() => {
-  // Initialize with all users expanded or fetch initial data
-  // expandedUsers.value = users.value.map(user => user.id);
+  fetchUsers();
 });
+
+async function confirmDeleteUser(userId) {
+  if (confirm("Are you sure you want to delete this user and all their houses?")) {
+    try {
+      await deleteUser(userId);
+    } catch (err) {   
+      console.error('Error deleting user:', err);
+    }
+  }
+}
 </script>
 
-<style scoped lang="scss">
-.admin-container {
+<style scoped lang="scss"> 
+
+.admin-container { 
   background: white;
   min-height: 100vh;
   color: #212529;
@@ -424,11 +255,6 @@ onMounted(() => {
     font-size: 0.85rem;
     color: #6c757d;
   }
-}
-
-.house-actions {
-  display: flex;
-  gap: 0.5rem;
 }
 
 .user-actions {

@@ -5,7 +5,9 @@ import {
   findByEmail,
   createUser,
   updateUser,
-  getAllUsers,
+  getAllUsersWithHouses, 
+  deleteUserModel
+  
 } from "../models/users.model.js";
 import dotenv from "dotenv";
 
@@ -172,4 +174,47 @@ export const getAll = async (req, res) => {
     console.error("Fetching users error:", err);
     res.status(500).json({ error: "Error fetching users" });
   }
+}; 
+
+export const getUsersAdmin = async (req, res) => {
+  try {
+    if (!req.user || !req.user.is_admin) {
+      return res.status(403).json({ error: "Unauthorized - Admin access required" });
+    }
+
+    const usersWithHouses = await getAllUsersWithHouses();
+    const sanitizedUsers = usersWithHouses.map(user => {
+      const { password, ...userWithoutPassword } = user;
+      return userWithoutPassword;
+    });
+
+    res.json(sanitizedUsers);
+  } catch (err) {
+    console.error("Error in getUsersAdmin:", err);
+    res.status(500).json({ error: "Error fetching users with houses" });
+  }
+}; 
+
+export const deleteUser = async (req, res) => {
+  try {
+    if (!req.user || !req.user.is_admin) {
+      return res.status(403).json({ error: "Unauthorized - Admin access required" });
+    }
+
+    const userId = req.params.id;
+    if (!userId) {
+      return res.status(400).json({ error: "User ID is required" });
+    }
+
+    const success = await deleteUserModel(userId); 
+    if (!success) {
+      return res.status(404).json({ error: "User not found" });
+    }
+
+    res.json({ message: `User with ID ${userId} deleted successfully` });
+  } catch (err) {
+    console.error("Error deleting user:", err);
+    res.status(500).json({ error: "Error deleting user" });
+  }
 };
+

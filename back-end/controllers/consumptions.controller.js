@@ -19,7 +19,7 @@ export async function insertReadings() {
         return;
       }
       for (const house of houses) {
-        if (!house.id_house) continue; // Verificação extra
+        if (!house.id_house) continue; 
         const randomValue = (Math.random() * 4 + 1).toFixed(2);
         await insertConsumptions(house.id_house, randomValue);
       }

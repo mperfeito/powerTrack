@@ -5,8 +5,11 @@ import {
   register,
 
   getAuthUser,
-  updateAuthUser,
+  updateAuthUser, 
+  getUsersAdmin, 
+  deleteUser
 } from "../controllers/users.controller.js";
+import { adminMiddleware } from "../middlewares/adminMiddleware.js";
 
 
 const router = express.Router();
@@ -28,6 +31,10 @@ router.patch(
   authMiddleware,
   validateFields(registerFields, "any"),
   updateAuthUser
-); //PATCH api/users/me ☑️
+); //PATCH api/users/me ☑️ 
+
+router.get("/", authMiddleware, adminMiddleware, getUsersAdmin); // GET api/users ☑️  
+router.delete("/:id",authMiddleware, adminMiddleware, deleteUser); // DELETE api/users/:id  
+
 
 export default router;

@@ -9,17 +9,19 @@
         </h2>
         <div class="d-flex align-items-center gap-3">
           <div class="dropdown">
-            <button 
-              class="btn btn-outline-secondary dropdown-toggle"
-              type="button"
-              id="filterDropdown"
-              data-bs-toggle="dropdown"
-              aria-expanded="false"
-            >
-              <i class="fas fa-filter me-1"></i> 
-              {{ activeFilter === 'all' ? 'All' : filterOptions[activeFilter]?.label || 'Filter' }}
-            </button>
-            <ul class="dropdown-menu" aria-labelledby="filterDropdown">
+              <button 
+                class="btn btn-outline-secondary dropdown-toggle"
+                type="button"
+                @click="showDropdown = !showDropdown"
+              >
+                <i class="fas fa-filter me-1"></i> 
+                {{ activeFilter === 'all' ? 'All' : filterOptions[activeFilter]?.label || 'Filter' }}
+              </button>
+              <ul 
+                class="dropdown-menu"
+                v-show="showDropdown"
+                @click.stop
+              >
               <li>
                 <button 
                   class="dropdown-item d-flex align-items-center" 
@@ -69,41 +71,55 @@
       </div>
 
       <div v-else class="notification-list">
-        <div 
-          v-for="notification in filteredNotifications" 
-          :key="notification.id_notification" 
-          class="notification-card p-4 mb-3"
-        >
-          <div class="d-flex justify-content-between align-items-center">
-            <div class="d-flex align-items-start gap-3 flex-grow-1">
-              <div class="notification-icon" :class="getNotificationType(notification.type)">
-                <i :class="getNotificationIcon(notification.type)"></i>
-              </div>
-              <div class="flex-grow-1">
-                <div class="d-flex justify-content-between align-items-start"> 
-                  <h5 class="text-dark mb-1">{{ getNotificationTitle(notification.type) }}</h5> 
-                  <div>  
-                    <i class="fas fa-calendar-day me-2" style="color: #467054;"></i>
-                    <small class="text-secondary">{{ formatTime(notification.created_at) }}</small>
-                  </div>
+        <div
+            v-for="notification in filteredNotifications" 
+            :key="notification.id" 
+            class="notification-card p-4 mb-3 position-relative"
+            :class="{ 'read-notification': notification.is_read }"
+          >
+            <!-- Date in top-right corner -->
+
+
+            <div class="d-flex justify-content-between align-items-center">
+              <div class="d-flex align-items-start gap-3 flex-grow-1">
+                <div class="notification-icon" :class="getNotificationType(notification.type)">
+                  <i :class="getNotificationIcon(notification.type)"></i>
                 </div>
-                <p class="text-secondary mb-0">{{ notification.message }}</p>
+                <div class="flex-grow-1">
+                  <div class="d-flex justify-content-between align-items-start"> 
+                    <h5 class="text-dark mb-1">{{ getNotificationTitle(notification.type) }}</h5> 
+                  </div>
+                  <p class="text-secondary mb-0">{{ notification.message }}</p>
+                </div>
+              </div> 
+              <div class="position-absolute top-0 end-0 p-1 me-4 text-end" style="font-size: smaller; color: #467054;">
+                <small class="text-muted">
+                  {{ formatTime(notification.created_at) }} 
+                  <!-- <i class="fas fa-calendar-day me-4" style="color: #467054;"></i> -->
+                </small>
               </div>
-            </div>
-            <div class="ms-3">
-              <button
-                class="btn btn-icon btn-danger"
-                @click="deleteNotification(notification.id_notification)"
-                title="Delete"
-                :disabled="isLoading"
-              >
-              <i v-if="isDeleting !== notification.id_notification" class="fas fa-trash-alt"></i>
-              <span v-else class="spinner-border spinner-border-sm" role="status"></span>
-              </button>
+              <div class="ms-3 d-flex gap-2"> 
+                <!-- <button
+                  class="btn btn-icon"
+                  @click="markAsRead(notification.id)"
+                  title="Mark as read"
+                  :disabled="notification.is_read"
+                >
+                  <i class="fas fa-check" :class="{ 'text-success': notification.is_read }"></i>
+                </button> -->
+                <button
+                  class="btn btn-icon btn-danger"
+                  @click="deleteNotification(notification.id)"
+                  title="Delete"
+                  :disabled="isLoading"
+                >
+                  <i v-if="isDeleting !== notification.id" class="fas fa-trash-alt"></i>
+                  <span v-else class="spinner-border spinner-border-sm" role="status"></span>
+                </button> 
+              </div>
             </div>
           </div>
-        
-        </div>
+
       </div>
     </div>
   </div>
@@ -160,9 +176,6 @@ const setFilter = (filterType) => {
   activeFilter.value = filterType;
 };
 
-const formatDate = (timestamp) => {
-  return new Date(timestamp).toLocaleDateString();
-};
 
 const formatTime = (timestamp) => {
   return new Date(timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
@@ -206,19 +219,17 @@ onMounted(() => {
 
 const deleteNotification = async (id) => {
   if (!id) {
+    console.error('Invalid notification ID:', id);
     error.value = 'Invalid notification ID';
-    console.error('Attempted to delete notification with undefined ID');
     return;
   }
 
-  if (confirm('Are you sure you want to delete this Notification?')) {
+  if (confirm('Are you sure you want to delete this notification?')) {
     isDeleting.value = id;
     try {
-      console.log('Deleting notification with ID:', id);
       await notificationsStore.deleteNotification(id);
     } catch (e) {
-      error.value = e.response?.data?.message || 
-                  'Failed to delete notification. Please try again.';
+      error.value = e.response?.data?.message || 'Failed to delete notification. Please try again.';
       console.error('Delete error:', e);
     } finally {
       isDeleting.value = null;
@@ -276,6 +287,19 @@ defineExpose({
     transform: translateY(-5px);
     box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
     border-color: #dfb046;
+  } 
+  &.read-notification {
+    opacity: 0.85;
+    background-color: rgba(245, 245, 245, 0.7);
+    border-left: 4px solid #467054;
+    
+    .notification-icon {
+      opacity: 0.7;
+    }
+    
+    .text-dark, .text-secondary {
+      opacity: 0.8;
+    }
   }
 }
 
@@ -355,6 +379,19 @@ defineExpose({
     
     &:hover {
       background: rgba(220, 53, 69, 0.2);
+    }
+  } 
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    background: rgba(70, 112, 84, 0.05);
+  }
+  
+  .fa-check {
+    color: #6c757d;
+    
+    &.text-success {
+      color: #467054;
     }
   }
 }

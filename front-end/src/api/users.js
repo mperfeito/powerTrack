@@ -1,23 +1,27 @@
-import api from '@/api/api'
+import api from '@/api/api';
 
 export default {
-    // POST /api/login 
-    login(credentials) {
-        return api().post("/login", credentials);
-    },
+  login(credentials) {
+    return api.post("/login", credentials);
+  },
 
-    // GET /api/users/me 
-    getAuthUser() {
-        return api().get("users/me");
-    },
+  getAuthUser() {
+    return api.get("/users/me");
+  },
 
-    // PATCH /api/users/me 
-    updateAuthUser(data) {
-        return api().patch("users/me", data);
-    },
+  updateAuthUser(data) {
+    return api.patch("/users/me", data);
+  },
 
-    // POST /api/users (registo)
-    register(userData) {
-        return api().post("/users", userData);
-    }
-}
+  register(userData) {
+    return api.post("/users", userData);
+  }, 
+
+  getUsersAdmin() {
+    return api.get("/users"); 
+  },  
+
+  deleteUser(id) {
+    return api.delete(`users/${id}`);
+  },
+};
