@@ -1,11 +1,5 @@
 import express from "express";
-import {
-  latestReading,
-  getPeriod,
-  getDevices,
-  getSimilarHouses,
-  getConsumptionHistory
-} from "../controllers/consumptions.controller.js";
+import { getAllConsumptions } from "../controllers/consumptions.controller.js";
 
 const router = express.Router();
 
@@ -15,5 +9,14 @@ router.get("/compare-period", getPeriod); // GET /api/consumptions/compare-perio
 router.get("/compare-similar", getSimilarHouses); // GET /api/consumptions/compare-similar ☑️
 router.get("/compare-devices", getDevices); // GET /api/consumptions/compare-devices ☑️
 
+router.get("/", getAllConsumptions);
+
+/*
+/api/consumptions?type=latest
+/api/consumptions?type=period&period=month
+/api/consumptions?type=similar
+/api/consumptions?type=devices
+/api/consumptions?type=history&limit=5
+*/
 
 export default router;
