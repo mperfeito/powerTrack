@@ -200,15 +200,12 @@ const saveHouse = async () => {
 const deleteHouse = async (id) => {
   const houseToDelete = houses.value.find(h => h.id === id);
   if (houseToDelete?.active) return alert('Cannot delete the active house.');
-
-  if (confirm(`Are you sure you want to delete ${houseToDelete.address}?`)) {
     try {
       await housesStore.deleteHouse(id);
       await housesStore.fetchHouses();
     } catch (error) {
       alert('Error deleting house: ' + error.message);
     }
-  }
 };
 
 const setActiveHouse = async (id) => {

@@ -117,12 +117,10 @@ onMounted(() => {
 });
 
 async function confirmDeleteUser(userId) {
-  if (confirm("Are you sure you want to delete this user and all their houses?")) {
-    try {
-      await deleteUser(userId);
-    } catch (err) {   
-      console.error('Error deleting user:', err);
-    }
+  try {
+    await deleteUser(userId);
+  } catch (err) {   
+    console.error('Error deleting user:', err);
   }
 }
 </script>

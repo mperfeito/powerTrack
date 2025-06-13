@@ -11,7 +11,7 @@ import cron from "node-cron";
 import { getActiveHouse } from "../models/houses.model.js";
 
 export async function insertReadings() {
-  cron.schedule("*/30 * * * *", async () => {
+  cron.schedule("*/5 * * * *", async () => {
     try {
       const houses = await getHouses();
       if (!houses || houses.length === 0) {
@@ -20,7 +20,7 @@ export async function insertReadings() {
       }
       for (const house of houses) {
         if (!house.id_house) continue; 
-        const randomValue = (Math.random() * 4 + 1).toFixed(2);
+        const randomValue = (Math.random() * 19 + 1).toFixed(2);
         await insertConsumptions(house.id_house, randomValue);
       }
     } catch (err) {

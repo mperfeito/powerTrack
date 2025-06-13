@@ -16,7 +16,4 @@ router.get("/compare-devices", getDevices); // GET /api/consumptions/compare-dev
 router.get("/history", getConsumptionHistory); // GET /api/consumptions/history ☑️
 
 
-// test route: GET/compare-goal
-// router.get("/compare-goal", getGoalProgress)
-
 export default router;

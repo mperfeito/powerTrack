@@ -216,7 +216,6 @@ const editAppliance = (appliance) => {
 
 // Delete Appliance
 const deleteAppliance = async (id) => {
-  if (confirm("Are you sure you want to delete this appliance?")) {
     try {
       await appliancesStore.deleteAppliance(id);
       await appliancesStore.fetchAppliances();
@@ -224,7 +223,6 @@ const deleteAppliance = async (id) => {
         console.error("Error removing appliance:", error);
         alert(appliancesStore.error || "Error removing appliance");
     }
-  }
 };
 
 // Fetch Appliances

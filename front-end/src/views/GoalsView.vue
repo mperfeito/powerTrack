@@ -158,10 +158,8 @@ const saveGoal = async () => {
   }
 };
 
-const deleteGoal = (id) => {
-  if (confirm('Are you sure you want to delete this goal?')) {
+const deleteGoal = (id) => { 
     store.deleteGoal(id);
-  }
 };
 
 const resetForm = () => {

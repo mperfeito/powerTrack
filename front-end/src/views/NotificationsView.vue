@@ -223,8 +223,6 @@ const deleteNotification = async (id) => {
     error.value = 'Invalid notification ID';
     return;
   }
-
-  if (confirm('Are you sure you want to delete this notification?')) {
     isDeleting.value = id;
     try {
       await notificationsStore.deleteNotification(id);
@@ -234,7 +232,7 @@ const deleteNotification = async (id) => {
     } finally {
       isDeleting.value = null;
     }
-  }
+
 };
 
 const fetchNotifications = () => {
