@@ -29,6 +29,7 @@ export async function insertReadings() {
   });
 }
 
+
 export async function getPeriod(req, res) {
   try {
     if (!req.user || !req.user.id_user) {
