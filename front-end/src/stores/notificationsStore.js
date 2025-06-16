@@ -6,7 +6,8 @@ export const useNotificationsStore = defineStore('notifications', {
     notifications: [],
     isLoading: false,
     error: null,
-    isDeleting: null
+    isDeleting: null,
+    isSending: false
   }),
 
   actions: {
@@ -15,12 +16,27 @@ export const useNotificationsStore = defineStore('notifications', {
         this.isLoading = true;
         this.error = null;
         const response = await notificationsApi.getNotifications();
-        this.notifications = response.data; // No ID mapping needed now
+        this.notifications = response.data;
       } catch (error) {
         this.error = error.response?.data?.message || 'Failed to fetch notifications';
         console.error('Error fetching notifications:', error);
       } finally {
         this.isLoading = false;
+      }
+    },
+
+    async sendNotifications() {
+      try {
+        this.isSending = true;
+        this.error = null;
+        await notificationsApi.sendNotifications();
+        await this.fetchNotifications(); 
+      } catch (error) {
+        this.error = error.response?.data?.message || 'Failed to send notifications';
+        console.error('Error sending notifications:', error);
+        throw error;
+      } finally {
+        this.isSending = false;
       }
     },
 
@@ -35,7 +51,7 @@ export const useNotificationsStore = defineStore('notifications', {
         this.isDeleting = id;
         await notificationsApi.deleteNotification(id);
         this.notifications = this.notifications.filter(
-          notification => notification.id !== id // Changed from id_notification to id
+          notification => notification.id !== id
         );
         return true;
       } catch (error) {

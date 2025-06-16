@@ -21,7 +21,9 @@ export default {
     deleteGoal(id) {
         return api.delete(`/goals/${id}`);
     }, 
-    calculateGoalProgress(id) {
-        return api.get(`/goals/${id}/calculate-progress`);
-    }
+    getGoalsWithProgress() {
+        return api.get('/goals', {
+          params: { includeProgress: true }
+        });
+      }
 }

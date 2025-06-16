@@ -11,7 +11,7 @@ import cron from "node-cron";
 import { getActiveHouse } from "../models/houses.model.js";
 
 export async function insertReadings() {
-  cron.schedule("*/5 * * * *", async () => {
+  cron.schedule("*/30 * * * *", async () => {
     try {
       const houses = await getHouses();
       if (!houses || houses.length === 0) {

@@ -38,49 +38,52 @@ export async function getConsumptionByPeriod(houseId, period, date) {
   return result[0].total || 0;
 }
 
-export async function checkConsumptionChanges(houseId) {
-  const now = moment();
-  const results = {};
-
-  const periods = ["day", "week", "month"];
-  for (const period of periods) {
-    const previous = moment(now).subtract(1, period);
-    const current = await getConsumptionByPeriod(houseId, period, now);
-    const prev = await getConsumptionByPeriod(houseId, period, previous);
-
-    const difference = current - prev;
-    const percentage_change = prev !== 0 ? (difference / prev) * 100 : 0;
-
-    results[period] = {
-      current,
-      previous: prev,
-      difference,
-      percentage_change,
-    };
-  }
-
-  return results;  
-}
-
-
 export async function getPeakHourConsumption(houseId) {
-  const date = moment().subtract(1, "day").format("YYYY-MM-DD");
-  const query = `
-    SELECT HOUR(reading_date) as hour, SUM(consumption_value) as total 
-    FROM consumption_readings
-    WHERE id_house = ? 
-    AND DATE(reading_date) = ? 
-    GROUP BY hour 
-    ORDER BY total DESC 
-    LIMIT 1
-  `;
+  try {
+    const yesterday = moment().subtract(1, 'day').format('YYYY-MM-DD');
+    console.log(`Checking peak hour for house ${houseId} on ${yesterday}`);
+    
+    // First check if we have any data for yesterday
+    const dataCheckQuery = `
+      SELECT COUNT(*) as count 
+      FROM consumption_readings 
+      WHERE id_house = ? 
+      AND DATE(reading_date) = ?
+    `;
+    const [dataCheck] = await db.query(dataCheckQuery, [houseId, yesterday]);
+    
+    if (dataCheck[0].count === 0) {
+      console.log(`No consumption data found for house ${houseId} on ${yesterday}`);
+      return { hour: null, value: 0 };
+    }
 
-  const [result] = await db.query(query, [houseId, date]);
-  return {
-    hour: result[0]?.hour || null,
-    value: result[0]?.total || 0,
-  };
+    const peakQuery = `
+      SELECT HOUR(reading_date) as hour, 
+             SUM(consumption_value) as total 
+      FROM consumption_readings
+      WHERE id_house = ? 
+      AND DATE(reading_date) = ? 
+      GROUP BY hour 
+      ORDER BY total DESC 
+      LIMIT 1
+    `;
+
+    const [result] = await db.query(peakQuery, [houseId, yesterday]);
+    console.log('Peak hour query result:', result);
+    
+    if (result.length > 0) {
+      return {
+        hour: result[0].hour,
+        value: result[0].total || 0
+      };
+    }
+    return { hour: null, value: 0 };
+  } catch (error) {
+    console.error('Error in getPeakHourConsumption:', error);
+    return { hour: null, value: 0 };
+  }
 }
+
 
 export async function createNotification(houseId, type, message, data = {}) {
   const query = `
@@ -107,4 +110,24 @@ export async function getNotifications(houseId) {
 export async function deleteNotificationById(notificationId) {
   const query = "DELETE FROM notifications WHERE id = ?";
   await db.query(query, [notificationId]);
+} 
+
+export async function getLastNotificationDate(houseId) {
+  const query = `
+    SELECT MAX(created_at) as last_date 
+    FROM notifications 
+    WHERE id_house = ?
+  `;
+  const [result] = await db.query(query, [houseId]);
+  return result[0]?.last_date || null;
+}
+
+export async function wasNotifiedToday(houseId) {
+  const lastDate = await getLastNotificationDate(houseId);
+  if (!lastDate) return false;
+  
+  const lastNotificationDate = moment(lastDate).startOf('day');
+  const today = moment().startOf('day');
+  
+  return lastNotificationDate.isSame(today);
 }
