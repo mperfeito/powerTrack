@@ -1,6 +1,6 @@
 <template>
   <div class="d-flex">
-    <Sidebar />
+    <Sidebar/>
     <div class="dashboard-container flex-grow-1 p-5">
       <div class="d-flex justify-content-between align-items-center mb-4">
         <h2 class="text-dark fw-bold">
@@ -258,7 +258,9 @@ import VueApexCharts from "vue3-apexcharts";
 const appliancesStore = useAppliancesStore();
 const consumptionsStore = useConsumptionsStore(); 
 const goalsStore = useGoalsStore();
-const activeGoal = computed(() => goalsStore.activeGoal);
+const activeGoal = computed(() => goalsStore.activeGoal); 
+
+const interval = ref(null);
 
 onMounted(async () => {  
   appliancesStore.fetchAppliances();  
@@ -267,20 +269,23 @@ onMounted(async () => {
   consumptionsStore.fetchSimilarHouses(); 
   consumptionsStore.fetchConsumptionHistory();
 
-    onBeforeUnmount(() => clearInterval(interval));
-
   await goalsStore.fetchGoals();
   if (goalsStore.activeGoal) {
     await goalsStore.calculateGoalProgress(goalsStore.activeGoal.id);
   }  
 
-  const interval = setInterval(() => {
+  interval.value = setInterval(() => {
     consumptionsStore.fetchLatestReading();
   }, 2 * 60 * 1000); 
 });
 
+onBeforeUnmount(() => {
+  if (interval.value) {
+    clearInterval(interval.value);
+  }
+});
+
 ////////// GOALS ////////// 
-// Days Remaining in the Goal
 const daysRemaining = computed(() => {
   if (!activeGoal.value) return 0;
   const today = new Date();
@@ -290,28 +295,16 @@ const daysRemaining = computed(() => {
   return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 });
 
-// For the Apex Chart: Percentage of the Goal(depending on the days left)
-// const daysPercentage = computed(() => {
-//   if (!activeGoal.value) return 0;
-//   const totalDays = Math.ceil(
-//     (new Date(activeGoal.value.end_date) - new Date(activeGoal.value.start_date)) / 
-//     (1000 * 60 * 60 * 24)
-//   );
-//   return Math.round((daysRemaining.value / totalDays) * 100);
-// });
-
-// Current Consumption since the startDate goal date
 const goalProgressAchieved = computed(() => {
-  if (!activeGoal.value) return 0;
+  if (!activeGoal.value) return '0';
   const progress = goalsStore.goalProgress[activeGoal.value.id];
-  return progress ? parseFloat(progress.achieved).toFixed(1) : 0;
+  return progress ? parseFloat(progress.achieved).toFixed(1) : '0';
 });
 
-// Remaining Consumption
 const goalProgressRemaining = computed(() => {
-  if (!activeGoal.value) return 0;
+  if (!activeGoal.value) return '0';
   const progress = goalsStore.goalProgress[activeGoal.value.id];
-  return progress ? Math.max(0, parseFloat(progress.remaining)).toFixed(1) : 0;
+  return progress ? Math.max(0, parseFloat(progress.remaining)).toFixed(1) : '0';
 });
 
 const isGoalCompleted = computed(() => {
@@ -320,20 +313,27 @@ const isGoalCompleted = computed(() => {
   return progress ? progress.isCompleted : false;
 });
 
-// GOALS CHART
 const goalsSeries = computed(() => {
   if (!activeGoal.value) return [0];
-  const today = new Date();
-  const startDate = new Date(activeGoal.value.start_date);
-  const endDate = new Date(activeGoal.value.end_date);
-  
-  if (today >= endDate) return [100];
-  if (today <= startDate) return [0];
-  
-  const totalDays = Math.ceil((endDate - startDate) / (1000 * 60 * 60 * 24));
-  const elapsedDays = Math.ceil((today - startDate) / (1000 * 60 * 60 * 24));
-  return [(elapsedDays / totalDays) * 100];
+  const progress = goalsStore.goalProgress[activeGoal.value.id];
+  return progress ? [parseFloat(progress.percentage)] : [0]; 
 });
+
+// GOALS CHART
+// const goalsSeries = computed(() => {
+//   if (!activeGoal.value) return [0];
+//   const today = new Date();
+//   const startDate = new Date(activeGoal.value.start_date);
+//   const endDate = new Date(activeGoal.value.end_date);
+  
+//   if (today >= endDate) return [100];
+//   if (today <= startDate) return [0];
+  
+//   const totalDays = Math.ceil((endDate - startDate) / (1000 * 60 * 60 * 24));
+//   const elapsedDays = Math.ceil((today - startDate) / (1000 * 60 * 60 * 24));
+//   return [(elapsedDays / totalDays) * 100];
+// }); 
+
 
 const goalsChartOptions = ref({
   chart: {

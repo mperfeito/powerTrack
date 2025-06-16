@@ -28,6 +28,6 @@ export default {
 
   // PUT /api/users/me/houses/active/{id} - ativar casa
   setActiveHouse(id) {
-    return api.put(`/users/me/houses/active/${id}`);
+    return api.patch(`/users/me/houses/active/${id}`);
   }
 };

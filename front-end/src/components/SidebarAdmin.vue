@@ -46,11 +46,7 @@ export default {
     navigateTo(path) {
       this.$router.push(path)
     },
-    async logout() {
-      if (!confirm('Are you sure you want to log out?')) {
-        return;
-      }
-      
+    async logout() {      
       try {
         const authStore = useAuthStore();
         await authStore.clearAuth();

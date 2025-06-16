@@ -29,6 +29,7 @@
                 class="form-control settings-input"
                 v-model="user.first_name"
                 placeholder="John"
+                required
               />
             </div>
             <div class="col-md-6">
@@ -38,6 +39,7 @@
                 class="form-control settings-input"
                 v-model="user.last_name"
                 placeholder="Doe"
+                required
               />
             </div>
             <div class="col-md-6">
@@ -51,17 +53,19 @@
               />
             </div>
             <div class="col-md-6">
-              <label class="form-label text-dark">Phone</label>
+              <label class="form-label text-dark">Phone Number</label>
               <input
                 type="tel"
                 class="form-control settings-input"
                 v-model="user.phone_number"
-                placeholder="+351 123 456 789"
+                placeholder="123456789"
+                pattern="[0-9]{9}"
+                title="Please enter exactly 9 digits"
               />
             </div>
+        
           </div>
-        </div>
-
+          <br>
         <div class="settings-card p-4 mb-4">
           <h5 class="text-dark mb-4">
             <i class="fas fa-lock me-2" style="color: #467054;"></i> Security
@@ -109,14 +113,14 @@
         </div>
       </div>
     </div>
-  </div>
+  </div> 
+</div>
 </template>
 
 <script setup>
 import Sidebar from "../components/Sidebar.vue"; 
 import { ref, onMounted } from "vue";
-import { useAuthStore } from "../stores/authStore";  
-import axios from "axios";  
+import { useAuthStore } from "../stores/authStore";
 
 const authStore = useAuthStore();
 const loading = ref(true);
@@ -126,7 +130,8 @@ const user = ref({
   first_name: "",
   last_name: "",
   email: "",
-  phone_number: ""
+  phone_number: "",
+  nif: ""
 });
 
 const password = ref({
@@ -138,58 +143,50 @@ const password = ref({
 // Fetch user data 
 onMounted(async () => {
   try {
-    if (authStore.user) {
-      user.value = { 
-        first_name: authStore.user.first_name,
-        last_name: authStore.user.last_name,
-        email: authStore.user.email,
-        phone_number: authStore.user.phone_number 
-      };
-    } else {
+    if (!authStore.user) {
       await authStore.fetchUser();
-      user.value = { 
-        first_name: authStore.user.first_name,
-        last_name: authStore.user.last_name,
-        email: authStore.user.email,
-        phone_number: authStore.user.phone_number 
-      };
     }
+    
+    user.value = { 
+      first_name: authStore.user.first_name || "",
+      last_name: authStore.user.last_name || "",
+      email: authStore.user.email || "",
+      phone_number: authStore.user.phone_number || "",
+      nif: authStore.user.nif || ""
+    };
+    
     loading.value = false;
   } catch (error) {
     console.error("Error loading user data:", error);
   }
-});
+}); 
 
 const saveSettings = async () => {
   saving.value = true;
   
   try {
-    // Only handle password update if new password was provided
-    if (password.value.new) {
-      // Validate passwords
-      if (password.value.new !== password.value.confirm) {
-        throw new Error("New passwords don't match");
-      }
-      if (!password.value.current) {
-        throw new Error("Current password is required to change password");
-      }
-
-      // Call the dedicated password update action
-      await authStore.updatePassword({
-        currentPassword: password.value.current,
-        newPassword: password.value.new
-      });
-      
-      // Clear password fields after successful update
-      password.value = { current: "", new: "", confirm: "" };
-      
-      alert("Password updated successfully!");
-    } else {
-      alert("No changes to save");
+    // Validate required fields
+    if (!user.value.first_name || !user.value.last_name) {
+      throw new Error("First name and last name are required");
     }
+
+    // Validate phone number format
+    if (user.value.phone_number && !/^\d{9}$/.test(user.value.phone_number)) {
+      throw new Error("Phone number must be exactly 9 digits");
+    }
+
+    // Prepare payload with required fields only
+    const payload = {
+      first_name: user.value.first_name,
+      last_name: user.value.last_name,
+      phone_number: user.value.phone_number || null // Explicit null instead of undefined
+    };
+
+    await authStore.updateProfile(payload);
+
+    // ... rest of the password update logic
   } catch (error) {
-    console.error("Password update error:", error);
-    alert(error.response?.data?.error || error.message || "Password update failed");
+    alert(error.message);
   } finally {
     saving.value = false;
   }
@@ -200,11 +197,11 @@ const resetForm = () => {
     first_name: authStore.user.first_name,
     last_name: authStore.user.last_name,
     email: authStore.user.email,
-    phone_number: authStore.user.phone_number
+    phone_number: authStore.user.phone_number,
+    nif: authStore.user.nif
   };
   password.value = { current: "", new: "", confirm: "" };
 };
-  
 </script>
 
 <style scoped lang="scss">

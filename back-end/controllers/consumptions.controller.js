@@ -20,13 +20,68 @@ export async function insertReadings() {
       }
       for (const house of houses) {
         if (!house.id_house) continue; 
-        const randomValue = (Math.random() * 4 + 1).toFixed(2);
+        const randomValue = (Math.random() * 19 + 1).toFixed(2);
         await insertConsumptions(house.id_house, randomValue);
       }
     } catch (err) {
       console.error("Error inserting readings", err);
     }
   });
+}
+
+export async function getAllConsumptions(req, res) {
+  try {
+    if (!req.user || !req.user.id_user)
+      return res.status(401).json({ message: "Unauthorized" });
+
+    const activeHouse = await getActiveHouse(req.user.id_user);
+    if (!activeHouse || !activeHouse.id_house)
+      return res.status(404).json({ message: "Active house not found" });
+
+    const houseId = activeHouse.id_house;
+    const { type, period, limit } = req.query;
+
+    switch (type) {
+      case "latest":
+        const latest = await getLatest(houseId);
+        if (!latest || latest.length === 0)
+          return res.status(404).json({ message: "No data found" });
+        return res.status(200).json(latest[0]);
+
+      case "period":
+        if (!period || !["day", "week", "month"].includes(period))
+          return res.status(400).json({ message: "Invalid or missing period. Use 'day', 'week' or 'month'" });
+        const periodData = await comparePeriod(houseId, period);
+        return res.json(periodData);
+
+      case "similar":
+        const similar = await compareWithSimilarHouses(houseId);
+        return res.json(similar);
+
+      case "devices":
+        const devices = await compareDevices(houseId);
+        return res.json(devices);
+
+      case "history":
+        let lim = 8;
+        if (limit) {
+          lim = parseInt(limit);
+          if (isNaN(lim) || lim <= 0) {
+            return res.status(400).json({ message: "Limit must be a positive integer" });
+          }
+        }
+        const history = await getConsumptions(houseId, lim);
+        return res.json(history.reverse());
+
+      default:
+        return res.status(400).json({
+          message: "Missing or invalid 'type' query parameter. Use one of: latest, compare-period, compare-similar, compare-devices, history",
+        });
+    }
+  } catch (error) {
+    console.error("getAllConsumptions error:", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
 }
 
 export async function getPeriod(req, res) {

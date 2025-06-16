@@ -11,7 +11,6 @@ import { insertReadings } from "../controllers/consumptions.controller.js";
 import { getActiveHouse } from "../models/houses.model.js";
 import { authMiddleware } from "../middlewares/authMiddleware.js";
 import { login } from "../controllers/users.controller.js"; 
-import { startNotificationScheduler } from "../controllers/notifications.controller.js"; 
 
 
 dotenv.config();
@@ -47,7 +46,7 @@ app.use("/api/goals", goalsRoutes);
 app.use("/api/consumptions", consumptionsRoutes);
 app.use("/api", notificationsRoutes);
 
-startNotificationScheduler(); 
+
 
 // Error handling middlewares
 app.use((err, req, res, next) => {
@@ -61,7 +60,7 @@ app.use((req, res) => {
 
 // Start server
 app.listen(port, () => {
-  console.log(`Server running at http://localhost:${port}`);
+  console.log(`Server running at http://localhost:${port}`); 
   insertReadings().catch((err) => {
     console.error("Failed to initialize readings:", err);
   });

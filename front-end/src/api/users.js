@@ -10,7 +10,7 @@ export default {
   },
 
   updateAuthUser(data) {
-    return api.patch("/users/me", data);
+    return api.patch("/users/me", data); 
   },
 
   register(userData) {

@@ -57,26 +57,14 @@ export default {
     navigateTo(path) {
       this.$router.push(path)
     },
-    async logout() {
-      // Optional: Add confirmation dialog
-      if (!confirm('Are you sure you want to log out?')) {
-        return;
-      }
-      
+    async logout() {      
       try {
-        const authStore = useAuthStore();
-        
-        // Clear authentication state
-        await authStore.clearAuth();
-        
-        // Redirect to login page using $router
-        this.$router.push('/login'); // Or your initial view route
-        
-        // Optional: Show success message
+        const authStore = useAuthStore();    
+        await authStore.clearAuth();  
+        this.$router.push('/login'); 
         console.log('Logout successful');
       } catch (error) {
         console.error('Logout failed:', error);
-        // Optional: Show error message to user
       }
     }
   }

@@ -56,7 +56,8 @@ export const useGoalsStore = defineStore('goals', {
   actions: {
     async fetchGoals() {
       try {
-        const response = await goalsApi.getGoals();
+        this.isLoading = true;
+        const response = await goalsApi.getGoalsWithProgress();
         this.goals = response.data.goals.map(goal => ({
           ...goal,
           id: goal.id_goal, 
@@ -65,9 +66,23 @@ export const useGoalsStore = defineStore('goals', {
           startDate: formatDate(goal.start_date),
           endDate: formatDate(goal.end_date)
         }));
+        
+        // Update progress data - now it's nested in each goal
+        response.data.goals.forEach(goal => {
+          if (goal.progress) {
+            this.goalProgress[goal.id_goal] = {
+              percentage: goal.progress.progress_percentage,
+              achieved: goal.progress.current_value,
+              remaining: goal.progress.remaining,
+              isCompleted: goal.progress.is_completed
+            };
+          }
+        });
       } catch (error) {
         console.error('Failed to fetch goals:', error);
         throw error;
+      } finally {
+        this.isLoading = false;
       }
     },
 

@@ -45,11 +45,12 @@
             </ul>
           </div>
           <button 
-            @click="fetchNotifications" 
+            @click="refreshNotifications" 
             class="btn btn-outline-secondary"
-            :disabled="isLoading"
+            :disabled="isLoading || isSending"
           >
-            <i class="fas fa-sync" :class="{ 'fa-spin': isLoading }"></i> Refresh
+            <i class="fas fa-sync" :class="{ 'fa-spin': isLoading || isSending }"></i> 
+            {{ isSending ? 'Sending...' : 'Refresh' }}
           </button>
         </div>
       </div>
@@ -94,8 +95,7 @@
               </div> 
               <div class="position-absolute top-0 end-0 p-1 me-4 text-end" style="font-size: smaller; color: #467054;">
                 <small class="text-muted">
-                  {{ formatTime(notification.created_at) }} 
-                  <!-- <i class="fas fa-calendar-day me-4" style="color: #467054;"></i> -->
+                  {{ formatNotificationDateTime(notification.created_at) }}                  <!-- <i class="fas fa-calendar-day me-4" style="color: #467054;"></i> -->
                 </small>
               </div>
               <div class="ms-3 d-flex gap-2"> 
@@ -129,15 +129,22 @@
 import { ref, computed, onMounted } from 'vue';
 import { storeToRefs } from 'pinia';
 import Sidebar from "@/components/Sidebar.vue";
-import { useNotificationsStore } from '@/stores/notificationsStore';
+import { useNotificationsStore } from '@/stores/notificationsStore'; 
+import moment from 'moment';
 
-
-const isDeleting = ref(null);
-const activeFilter = ref('all');
 const notificationsStore = useNotificationsStore();
-const { notifications, isLoading, error } = storeToRefs(notificationsStore);
+const activeFilter = ref('all');
+const showDropdown = ref(false);
 
-// Filter configuration - now a reactive constant
+const { 
+  notifications, 
+  isLoading, 
+  error,
+  isSending,
+  isDeleting 
+} = storeToRefs(notificationsStore);
+
+// Filter configuration
 const filterOptions = {
   high_consumption: {
     label: 'High Consumption',
@@ -154,31 +161,22 @@ const filterOptions = {
     icon: 'fas fa-bolt',
     color: '#0d6efd'
   },
-  goal_completed: {
-    label: 'Goal Completed',
+  goal_achieved: {
+    label: 'Goal Achieved',
     icon: 'fas fa-trophy',
-    color: '#467054'
+    color: '#6F42C1'
   }
 };
 
 // Computed properties
 const filteredNotifications = computed(() => {
-  if (activeFilter.value === 'all') {
-    return notifications.value;
-  }
-  return notifications.value.filter(
-    notification => notification.type === activeFilter.value
-  );
+  return activeFilter.value === 'all' 
+    ? notifications.value 
+    : notifications.value.filter(n => n.type === activeFilter.value);
 });
 
-// Methods
-const setFilter = (filterType) => {
-  activeFilter.value = filterType;
-};
-
-
-const formatTime = (timestamp) => {
-  return new Date(timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+const formatNotificationDateTime = (timestamp) => {
+  return moment(timestamp).format('HH:mm · DD/MM/YYYY');
 };
 
 const getNotificationType = (type) => {
@@ -198,7 +196,7 @@ const getNotificationIcon = (type) => {
     peak_consumption: 'fas fa-bolt',
     goal_completed: 'fas fa-trophy',
   };
-  return iconMap[type] || 'fas fa-star';
+  return iconMap[type] || 'fas fa-trophy';
 };
 
 const getNotificationTitle = (type) => {
@@ -208,45 +206,43 @@ const getNotificationTitle = (type) => {
     peak_consumption: 'Energy Peak',
     goal_completed: 'Goal Achieved!',
   };
-  return titleMap[type] || 'Notification';
+  return titleMap[type] || 'Goal Achieved';
 };
 
-onMounted(() => {
-  notificationsStore.fetchNotifications();
-  
-});
-
+// Methods
+const setFilter = (filterType) => {
+  activeFilter.value = filterType;
+  showDropdown.value = false;
+};
 
 const deleteNotification = async (id) => {
   if (!id) {
-    console.error('Invalid notification ID:', id);
     error.value = 'Invalid notification ID';
     return;
   }
-
-  if (confirm('Are you sure you want to delete this notification?')) {
-    isDeleting.value = id;
-    try {
-      await notificationsStore.deleteNotification(id);
-    } catch (e) {
-      error.value = e.response?.data?.message || 'Failed to delete notification. Please try again.';
-      console.error('Delete error:', e);
-    } finally {
-      isDeleting.value = null;
-    }
+  
+  isDeleting.value = id;
+  try {
+    await notificationsStore.deleteNotification(id);
+  } catch (e) {
+    error.value = e.response?.data?.message || 'Failed to delete notification';
+  } finally {
+    isDeleting.value = null;
   }
 };
 
-const fetchNotifications = () => {
-  notificationsStore.fetchNotifications();
+const refreshNotifications = async () => {
+  try {
+    await notificationsStore.sendNotifications();
+    await notificationsStore.fetchNotifications();
+  } catch (e) {
+    error.value = 'Failed to refresh notifications';
+  }
 };
 
+// Lifecycle hooks
 onMounted(() => {
   notificationsStore.fetchNotifications();
-});
-
-defineExpose({
-  filterOptions
 });
 </script>
 
@@ -408,5 +404,10 @@ defineExpose({
     background-color: #467054;
     color: white;
   }
+} 
+.dropdown-menu {
+  position: absolute;
+  z-index: 1000; 
+  display: block; 
 }
 </style>
