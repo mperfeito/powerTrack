@@ -16,9 +16,10 @@
     "jest": "^29.7.0",
     "jest-environment-jsdom": "^29.7.0"
   },
-  "scripts": {
-    "test": "jest",
-    "test:watch": "jest --watch"
+    "scripts": {
+      "test": "jest",
+      "test:front": "cd front-end && jest",
+      "test:auth": "cd front-end && jest tests/jest/auth.test.js"
   },
   "jest": {
     "moduleFileExtensions": ["js", "json", "vue"],
