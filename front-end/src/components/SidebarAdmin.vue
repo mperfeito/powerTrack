@@ -64,14 +64,15 @@ export default {
 .sidebar {
   width: 250px;
   height: 100vh; 
-  overflow-y: auto;
   background: linear-gradient(180deg, #355943 0%, #467054 100%);
   display: flex;
   flex-direction: column;
   padding: 2rem 1rem;
   box-shadow: 5px 0 15px rgba(0, 0, 0, 0.1);
-  position: relative;
-  overflow: hidden;
+  position: fixed;
+  left: 0;
+  top: 0;
+  z-index: 1000;
 }
 
 .logo-container {
