@@ -18,7 +18,7 @@ export default {
 
   // PUT /api/users/me/houses/{id}
   updateHouse(id, houseData) {
-    return api.patch(`/users/me/houses/${id}`, houseData);
+    return api.put(`/users/me/houses/${id}`, houseData);
   },
 
   // DELETE /api/users/me/houses/{id}
@@ -26,7 +26,7 @@ export default {
     return api.delete(`/users/me/houses/${id}`);
   },
 
-  // PUT /api/users/me/houses/active/{id} - ativar casa
+  // PATCH /api/users/me/houses/active/{id} 
   setActiveHouse(id) {
     return api.patch(`/users/me/houses/active/${id}`);
   }

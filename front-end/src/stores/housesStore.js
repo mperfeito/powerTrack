@@ -64,12 +64,19 @@ export const useHousesStore = defineStore('house', {
     },
 
     async setActiveHouse(id) {
+      this.loading = true;
       try {
-        await housesApi.setActiveHouse(id);
+        const response = await housesApi.setActiveHouse(id);
         this.activeHouseId = id;
+        await this.fetchHouses(); 
+        return response.data;
       } catch (err) {
-        this.error = err.message || 'Error setting active house';
+        this.error = err.response?.data?.error || err.message;
+        throw err;
+      } finally {
+        this.loading = false;
       }
     }
+
   }
 });

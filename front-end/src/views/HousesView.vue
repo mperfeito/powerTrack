@@ -210,12 +210,26 @@ const deleteHouse = async (id) => {
 
 const setActiveHouse = async (id) => {
   try {
-    await housesStore.setActiveHouse(id);
-    await housesStore.fetchActiveHouse();
+    const response = await housesStore.setActiveHouse(id);
+    
+    if (response?.success) {
+      housesStore.activeHouseId = id;
+      await housesStore.fetchHouses();
+    }
+    
   } catch (error) {
-    alert('Error setting active house: ' + error.message);
+    console.error('Error details:', {
+      status: error.response?.status,
+      data: error.response?.data
+    });
+    
+    const userMessage = error.response?.data?.error 
+      || 'Failed to activate house. Please try again.';
+    
+    alert(userMessage);
   }
 };
+
 </script>
 
 <style scoped lang="scss">
