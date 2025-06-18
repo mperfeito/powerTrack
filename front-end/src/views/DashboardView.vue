@@ -229,9 +229,9 @@
           </div>
           <div class="widget-content" v-if="periodSeries.length > 0">
             <apexchart 
-              type="line" 
+              type="bar" 
               width="100%"
-              height="250" 
+              height="285" 
               :options="periodChartOptions" 
               :series="periodSeries"
             ></apexchart>
@@ -319,22 +319,7 @@ const goalsSeries = computed(() => {
   return progress ? [parseFloat(progress.percentage)] : [0]; 
 });
 
-// GOALS CHART
-// const goalsSeries = computed(() => {
-//   if (!activeGoal.value) return [0];
-//   const today = new Date();
-//   const startDate = new Date(activeGoal.value.start_date);
-//   const endDate = new Date(activeGoal.value.end_date);
-  
-//   if (today >= endDate) return [100];
-//   if (today <= startDate) return [0];
-  
-//   const totalDays = Math.ceil((endDate - startDate) / (1000 * 60 * 60 * 24));
-//   const elapsedDays = Math.ceil((today - startDate) / (1000 * 60 * 60 * 24));
-//   return [(elapsedDays / totalDays) * 100];
-// }); 
-
-
+/////// GOALS CHART ///////
 const goalsChartOptions = ref({
   chart: {
     type: 'radialBar',
@@ -396,106 +381,6 @@ const formatDate = (dateString) => {
   const options = { day: '2-digit', month: 'short', year: 'numeric' };
   return new Date(dateString).toLocaleDateString('en-GB', options);
 };
-
-
-/////// GOALS CHART ANTIGO///////
-// const radialChartOptions = ref({
-//   series: [0],
-//   chart: {
-//     height: 250,
-//     type: 'radialBar',
-//     toolbar: {
-//       show: false
-//     }
-//   },
-//   plotOptions: {
-//     radialBar: {
-//       startAngle: -135,
-//       endAngle: 225,
-//       hollow: {
-//         margin: 0,
-//         size: '70%',
-//         background: '#fff',
-//         dropShadow: {
-//           enabled: true,
-//           top: 3,
-//           left: 0,
-//           blur: 4,
-//           opacity: 0.5
-//         }
-//       },
-//       track: {
-//         background: '#fff',
-//         strokeWidth: '67%',
-//         margin: 0,
-//         dropShadow: {
-//           enabled: true,
-//           top: -3,
-//           left: 0,
-//           blur: 4,
-//           opacity: 0.7
-//         }
-//       },
-//       dataLabels: {
-//         show: true,
-//         name: {
-//           offsetY: -10,
-//           show: true,
-//           color: '#888',
-//           fontSize: '17px'
-//         },
-//         value: {
-//           formatter: function(val) {
-//             return parseInt(val);
-//           },
-//           color: '#111',
-//           fontSize: '36px',
-//           show: true,
-//         }
-//       }
-//     }
-//   },
-// fill: {
-//   type: 'gradient',
-//   gradient: {
-//     shade: 'dark',
-//     type: 'horizontal',
-//     shadeIntensity: 0.5,
-//     gradientToColors: ['#dfb046'],
-//     inverseColors: false,
-//     opacityFrom: 1,
-//     opacityTo: 1,
-//     stops: [0, 100],
-//     colorStops: [
-//       {
-//         offset: 0,
-//         color: '#467054',
-//         opacity: 1
-//       },
-//       {
-//         offset: 100,
-//         color: '#dfb046',
-//         opacity: 1
-//       }
-//     ]
-//   }
-// },
-//   stroke: {
-//     lineCap: 'round'
-//   },
-//   labels: ['Progress'],
-// });
-
-// const radialSeries = computed(() => {
-//   return [goalProgressPercentage.value];
-// });
-
-// const goalProgressPercentage = computed(() => {
-//   if (!activeGoal.value) return 0;
-//   const progress = goalsStore.goalProgress[activeGoal.value.id];
-//   return progress ? Math.round(progress.percentage) : 0;
-// });
-
 
 ////////// CURRENT CONSUMPTION //////////
 const currentConsumption = computed(() => {
@@ -600,7 +485,7 @@ const comparedHousesCount = computed(() =>
   consumptionsStore.similarHouses?.comparedHouses?.length || 0
 )
 
-// Computed property to get the comparison value (e.g., "+10.5%")
+// Computed property to get the comparison value
 const comparisonValue = computed(() =>
   consumptionsStore.similarHouses?.comparison || 'N/A'
 )
@@ -638,52 +523,119 @@ const topDevicePercentage = computed(() => {
 
 /////////  PERIOD AVERAGE ////////
 // PERIOD COMPARISON CHART //
-const periodChartOptions = ref({
+const periodSeries = [{
+  name: 'Average Consumption',
+  data: [
+    consumptionsStore.periodComparison?.daily || 0,
+    consumptionsStore.periodComparison?.weekly || 0,
+    consumptionsStore.periodComparison?.monthly || 0
+  ]
+}];
+
+const periodChartOptions = {
   chart: {
-    type: 'line', 
-    toolbar: { show: false },
+    height: 350,
+    type: 'bar',
+    toolbar: {
+      show: false
+    },
+    animations: {
+      enabled: true,
+      easing: 'easeinout',
+      speed: 800
+    }
   },
-  colors: ['#467054', '#dfb046', '#3a7bd5'],
+  plotOptions: {
+    bar: {
+      borderRadius: 8,
+      columnWidth: '40%',
+      distributed: true,
+      dataLabels: {
+        position: 'top',
+      },
+    }
+  },
+  dataLabels: {
+    enabled: true,
+    formatter: function(val) {
+      return val.toFixed(2) + ' kWh';
+    },
+    offsetY: -20,
+    style: {
+      fontSize: '12px',
+      colors: ["#467054"],
+      fontWeight: 'bold'
+    },
+    background: {
+      enabled: false
+    }
+  },
+  colors: ['#467054', '#dfb046', '#6c757d'],
   xaxis: {
     categories: ['Daily', 'Weekly', 'Monthly'],
-    labels: { style: { colors: '#467054' } }
+    axisBorder: {
+      show: false
+    },
+    axisTicks: {
+      show: false
+    },
+    labels: {
+      style: {
+        colors: ['#467054', '#dfb046', '#6c757d'],
+        fontSize: '14px',
+        fontWeight: 'bold'
+      }
+    }
   },
   yaxis: {
-    title: { text: 'Consumption (kW)' },
-    labels: { formatter: (val) => val.toFixed(2) }
-  },
-  stroke: {
-    width: 3,
-    curve: 'smooth'
-  },
-  markers: {
-    size: 4
-  },
-  legend: {
-    position: 'top'
-  }
-});
-
-const periodSeries = computed(() => {
-  if (!consumptionsStore.periodComparison) return [];
-  const { daily, weekly, monthly } = consumptionsStore.periodComparison;
-
-  return [
-    {
-      name: 'Daily',
-      data: [1, 2, 3, 4, 5].map((day) => ({ x: `Day ${day}`, y: daily }))
+    axisBorder: {
+      show: false
     },
-    {
-      name: 'Weekly',
-      data: [1, 2, 3, 4, 5].map((week) => ({ x: `Week ${week}`, y: weekly }))
+    axisTicks: {
+      show: false,
     },
-    {
-      name: 'Monthly',
-      data: [1, 2, 3, 4, 5].map((month) => ({ x: `Month ${month}`, y: monthly }))
+    labels: {
+      show: true,
+      formatter: function(val) {
+        return val.toFixed(2) + ' kWh';
+      },
+      style: {
+        colors: '#467054',
+        fontSize: '12px'
+      }
     }
-  ];
-});
-
+  },
+  grid: {
+    borderColor: 'rgba(70, 112, 84, 0.1)',
+    strokeDashArray: 4,
+    padding: {
+      top: -20,
+      right: 0,
+      bottom: 0,
+      left: 0
+    }
+  },
+  tooltip: {
+    y: {
+      formatter: function(val) {
+        return val.toFixed(2) + ' kWh';
+      }
+    },
+    style: {
+      fontSize: '14px',
+      fontFamily: 'inherit'
+    },
+    theme: 'light'
+  },
+  states: {
+    hover: {
+      filter: {
+        type: 'darken',
+        value: 0.8
+      }
+    }
+  }
+};
 </script>
 
 <style scoped lang="scss">
