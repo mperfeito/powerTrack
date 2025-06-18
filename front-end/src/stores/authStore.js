@@ -47,36 +47,33 @@ export const useAuthStore = defineStore('auth', {
       }
     },
 
-    async updatePassword(data) {
+    async updateUser(data) {
       try {
-        const response = await api.patch('/users/me/password', { // Endpoint específico
-          current_password: data.currentPassword,
-          password: data.newPassword
-        });
-        return response.data;
-      } catch (error) {
-        console.error('Password update error:', error.response?.data);
-        throw new Error(error.response?.data?.message || "Password update failed");
-      }
-    }, 
-    async updateProfile(data) {
-      try {
-        // Clean the data before sending
-        const cleanedData = {
-          first_name: data.first_name || '',
-          last_name: data.last_name || '',
-          phone_number: data.phone_number || '',
-          // Explicitly exclude nif
+        const payload = {
+          first_name: data.first_name,
+          last_name: data.last_name,
+          email: data.email,
+          phone_number: data.phone_number,
+          nif: data.nif
         };
-        
-        const response = await api.patch('/users/me', cleanedData);
-        this.user = response.data;
+        if (data.password) {
+          payload.password = data.password;
+        }
+    
+        const response = await api.patch('/users/me', payload);
+    
+        this.user = {
+          ...this.user,
+          ...response.data
+        };
+    
         return response.data;
       } catch (error) {
-        console.error('Profile update error:', error.response?.data);
-        throw new Error(error.response?.data?.error || "Profile update failed");
+        console.error('User update error:', error);
+        throw new Error(error.response?.data?.error || "Update failed");
       }
     },
+    
 
     clearAuth() {
       this.token = null

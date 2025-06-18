@@ -62,24 +62,26 @@
                 pattern="[0-9]{9}"
                 title="Please enter exactly 9 digits"
               />
+            </div> 
+            <div class="col-md-6">
+                <label class="form-label text-dark">NIF</label>
+                <input
+                  type="text"
+                  class="form-control settings-input"
+                  v-model="user.nif"
+                  placeholder="123456789"
+                  pattern="[0-9]{9}"
+                  title="Please enter exactly 9 digits"
+                  required
+                />
             </div>
-        
           </div>
-          <br>
+        </div>
+
         <div class="settings-card p-4 mb-4">
           <h5 class="text-dark mb-4">
-            <i class="fas fa-lock me-2" style="color: #467054;"></i> Security
+            <i class="fas fa-lock me-2" style="color: #467054;"></i> Change Password
           </h5>
-          
-          <div class="mb-3">
-            <label class="form-label text-dark">Current Password</label>
-            <input
-              type="password"
-              class="form-control settings-input"
-              v-model="password.current"
-              placeholder="Enter current password"
-            />
-          </div>
           
           <div class="mb-3">
             <label class="form-label text-dark">New Password</label>
@@ -88,16 +90,6 @@
               class="form-control settings-input"
               v-model="password.new"
               placeholder="Enter new password"
-            />
-          </div>
-          
-          <div class="mb-3">
-            <label class="form-label text-dark">Confirm New Password</label>
-            <input
-              type="password"
-              class="form-control settings-input"
-              v-model="password.confirm"
-              placeholder="Confirm new password"
             />
           </div>
         </div>
@@ -113,8 +105,7 @@
         </div>
       </div>
     </div>
-  </div> 
-</div>
+  </div>
 </template>
 
 <script setup>
@@ -136,11 +127,9 @@ const user = ref({
 
 const password = ref({
   current: "",
-  new: "",
-  confirm: ""
+  new: ""
 });
 
-// Fetch user data 
 onMounted(async () => {
   try {
     if (!authStore.user) {
@@ -165,32 +154,42 @@ const saveSettings = async () => {
   saving.value = true;
   
   try {
-    // Validate required fields
-    if (!user.value.first_name || !user.value.last_name) {
-      throw new Error("First name and last name are required");
+    if (!user.value.first_name || !user.value.last_name || !user.value.nif) {
+      throw new Error("First name, last name, and NIF are required");
     }
 
-    // Validate phone number format
     if (user.value.phone_number && !/^\d{9}$/.test(user.value.phone_number)) {
       throw new Error("Phone number must be exactly 9 digits");
     }
 
-    // Prepare payload with required fields only
-    const payload = {
+    if (!/^\d{9}$/.test(user.value.nif)) {
+      throw new Error("NIF must be exactly 9 digits");
+    }
+
+    const updateData = {
       first_name: user.value.first_name,
       last_name: user.value.last_name,
-      phone_number: user.value.phone_number || null // Explicit null instead of undefined
+      email: user.value.email,
+      phone_number: user.value.phone_number,
+      nif: user.value.nif
     };
 
-    await authStore.updateProfile(payload);
+    if (password.value.new) {
+      updateData.password = password.value.new;
+    }
 
-    // ... rest of the password update logic
+    await authStore.updateUser(updateData);
+
+    password.value.new = ""; 
+
+    alert("Settings updated successfully!");
   } catch (error) {
     alert(error.message);
   } finally {
     saving.value = false;
   }
 };
+
 
 const resetForm = () => {
   user.value = {
@@ -200,7 +199,7 @@ const resetForm = () => {
     phone_number: authStore.user.phone_number,
     nif: authStore.user.nif
   };
-  password.value = { current: "", new: "", confirm: "" };
+  password.value = { current: "", new: "" };
 };
 </script>
 
@@ -211,7 +210,6 @@ const resetForm = () => {
   color: #212529;
   margin-left: 250px;
   background-image: url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M11 18c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm48 25c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm-43-7c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm63 31c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM34 90c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm56-76c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM12 86c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm28-65c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm23-11c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-6 60c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm29 22c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zM32 63c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm57-13c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-9-21c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM60 91c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM35 41c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM12 60c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2z' fill='%23467054' fill-opacity='0.05' fill-rule='evenodd'/%3E%3C/svg%3E");
-
 }
 
 .settings-content {
@@ -226,8 +224,6 @@ const resetForm = () => {
   transition: all 0.3s ease;
   border: 1px solid rgba(0, 0, 0, 0.1);
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
-  
- 
 }
 
 .settings-input {
@@ -247,22 +243,6 @@ const resetForm = () => {
   
   &::placeholder {
     color: #6c757d;
-  }
-}
-
-.form-check-input {
-  background-color: white;
-  border: 1px solid #ced4da;
-  width: 3em;
-  height: 1.5em;
-  
-  &:checked {
-    background-color: #467054;
-    border-color: #467054;
-  }
-  
-  &:focus {
-    box-shadow: 0 0 0 0.25rem rgba(70, 112, 84, 0.25);
   }
 }
 

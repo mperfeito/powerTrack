@@ -2,14 +2,13 @@
 import { defineStore } from 'pinia'
 import goalsApi from '@/api/goals'
 
-//  format dates 
 const formatDate = (dateString) => {
   if (!dateString) return '';
   if (/^\d{4}-\d{2}-\d{2}$/.test(dateString)) {
     return dateString;
   }
   const date = new Date(dateString);
-  if (isNaN(date.getTime())) return ''; 
+  if (isNaN(date.getTime())) return '';
   
   return date.toISOString().split('T')[0];
 };
@@ -17,13 +16,13 @@ const formatDate = (dateString) => {
 export const useGoalsStore = defineStore('goals', {
   state: () => ({
     goals: [], 
-    goalProgress:{}, 
-    isLodding: false, 
-    error:null,
+    goalProgress: {}, 
+    isLoading: false, 
+    error: null,
     currentGoal: {
       id: null,
       targetValue: "",
-      period: "monthly",
+      period: "monthly", 
       startDate: "",
       endDate: ""
     },
@@ -36,7 +35,7 @@ export const useGoalsStore = defineStore('goals', {
              state.currentGoal.startDate && 
              state.currentGoal.endDate;
     },
-      activeGoal: (state) => {
+    activeGoal: (state) => {
       if (state.goals.length === 0) return null;
       
       const now = new Date();
@@ -61,13 +60,13 @@ export const useGoalsStore = defineStore('goals', {
         this.goals = response.data.goals.map(goal => ({
           ...goal,
           id: goal.id_goal, 
-          period: goal.period_type,
+          period: goal.period_type, 
           targetValue: goal.target_value,
           startDate: formatDate(goal.start_date),
           endDate: formatDate(goal.end_date)
         }));
         
-        // Update progress data - now it's nested in each goal
+      
         response.data.goals.forEach(goal => {
           if (goal.progress) {
             this.goalProgress[goal.id_goal] = {
@@ -84,6 +83,66 @@ export const useGoalsStore = defineStore('goals', {
       } finally {
         this.isLoading = false;
       }
+    },
+
+    async createGoal(goalData) {
+      try {
+        const response = await goalsApi.createGoal({
+          period_type: goalData.period, 
+          target_value: goalData.targetValue,
+          start_date: formatDate(goalData.startDate),
+          end_date: formatDate(goalData.endDate)
+        });
+        await this.fetchGoals();
+        return response.data.goal;
+      } catch (error) {
+        console.error('Failed to create goal:', error);
+        throw error;
+      }
+    },
+
+    async updateGoal() {
+      if (!this.currentGoal.id) {
+        console.error('Cannot update goal: ID is missing');
+        return;
+      }
+      
+      try {
+        const response = await goalsApi.updateGoal(this.currentGoal.id, {
+          period_type: this.currentGoal.period, 
+          target_value: this.currentGoal.targetValue,
+          start_date: formatDate(this.currentGoal.startDate),
+          end_date: formatDate(this.currentGoal.endDate)
+        });
+        await this.fetchGoals();
+        this.resetCurrentGoal();
+        return response.data.goal;
+      } catch (error) {
+        console.error('Failed to update goal:', error);
+        throw error;
+      }
+    },
+
+    setCurrentGoal(goal) {
+      this.currentGoal = { 
+        id: goal.id_goal || goal.id, 
+        targetValue: goal.target_value || goal.targetValue,
+        period: goal.period_type || goal.period,
+        startDate: formatDate(goal.start_date || goal.startDate),
+        endDate: formatDate(goal.end_date || goal.endDate)
+      };
+      this.isEditing = true;
+    },
+
+    resetCurrentGoal() {
+      this.currentGoal = {
+        id: null,
+        targetValue: "",
+        period: "monthly", 
+        startDate: "",
+        endDate: ""
+      };
+      this.isEditing = false;
     },
 
     async fetchGoalById(id) {
@@ -117,28 +176,6 @@ export const useGoalsStore = defineStore('goals', {
         throw error;
       }
     },
-
-    async updateGoal() {
-      if (!this.currentGoal.id) {
-        console.error('Cannot update goal: ID is missing');
-        return;
-      }
-      
-      try {
-        const response = await goalsApi.updateGoal(this.currentGoal.id, {
-          period_type: this.currentGoal.period,
-          target_value: this.currentGoal.targetValue,
-          start_date: formatDate(this.currentGoal.startDate),
-          end_date: formatDate(this.currentGoal.endDate)
-        });
-        await this.fetchGoals();
-        this.resetCurrentGoal();
-        return response.data.goal;
-      } catch (error) {
-        console.error('Failed to update goal:', error);
-        throw error;
-      }
-    },  
 
     async deleteGoal(id) {
       if (!id) {
@@ -182,28 +219,6 @@ export const useGoalsStore = defineStore('goals', {
       } finally {
         this.isLoading = false;
       }
-    },
-
-    setCurrentGoal(goal) {
-      this.currentGoal = { 
-        id: goal.id_goal || goal.id, 
-        targetValue: goal.target_value || goal.targetValue,
-        period: goal.period_type || goal.period,
-        startDate: formatDate(goal.start_date || goal.startDate),
-        endDate: formatDate(goal.end_date || goal.endDate)
-      };
-      this.isEditing = true;
-    },
-
-    resetCurrentGoal() {
-      this.currentGoal = {
-        id: null,
-        targetValue: "",
-        period: "monthly",
-        startDate: "",
-        endDate: ""
-      };
-      this.isEditing = false;
     }
   }
 });

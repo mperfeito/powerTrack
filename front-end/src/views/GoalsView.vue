@@ -32,7 +32,7 @@
             <label class="form-label text-dark">Period</label>
             <select class="form-select settings-input" v-model="currentGoal.period">
               <option value="daily">Daily</option>
-              <option value="weekly">Weekly</option>
+              <option value="weekly_reduction">Weekly</option>
               <option value="monthly">Monthly</option>
               <option value="yearly">Yearly</option>
             </select>

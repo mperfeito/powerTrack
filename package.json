@@ -3,26 +3,34 @@
   "version": "1.0.0",
   "dependencies": {
     "apexcharts": "^4.7.0",
-    "vue": "^3.5.16",
-    "vue3-apexcharts": "^1.8.0",
-    "pinia": "^2.1.7"
+    "vue3-apexcharts": "^1.8.0"
   },
   "devDependencies": {
     "@babel/core": "^7.23.2",
     "@babel/preset-env": "^7.23.2",
+    "@jest/globals": "^29.7.0",
     "@vue/test-utils": "^2.4.6",
     "@vue/vue3-jest": "^29.2.6",
+    "axios-mock-adapter": "^2.1.0",
     "babel-jest": "^29.7.0",
+    "cross-env": "^7.0.3",
     "jest": "^29.7.0",
-    "jest-environment-jsdom": "^29.7.0"
+    "jest-environment-jsdom": "^29.7.0",
+    "pinia": "^3.0.3",
+    "supertest": "^7.1.1",
+    "vue": "^3.5.16"
   },
-    "scripts": {
-      "test": "jest",
-      "test:front": "cd front-end && jest",
-      "test:auth": "cd front-end && jest tests/jest/auth.test.js"
+  "scripts": {
+    "test": "jest",
+    "test:front": "cd front-end && jest",
+    "test:auth": "cd front-end && jest tests/jest/auth.test.js"
   },
   "jest": {
-    "moduleFileExtensions": ["js", "json", "vue"],
+    "moduleFileExtensions": [
+      "js",
+      "json",
+      "vue"
+    ],
     "transform": {
       "^.+\\.js$": "babel-jest",
       "^.+\\.vue$": "@vue/vue3-jest"
