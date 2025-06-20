@@ -34,7 +34,6 @@
               <option value="daily">Daily</option>
               <option value="weekly_reduction">Weekly</option>
               <option value="monthly">Monthly</option>
-              <option value="yearly">Yearly</option>
             </select>
           </div>
           
