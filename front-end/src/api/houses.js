@@ -16,9 +16,9 @@ export default {
     return api.post('/users/me/houses', houseData);
   },
 
-  // PUT /api/users/me/houses/{id}
+  // Patch /api/users/me/houses/{id}
   updateHouse(id, houseData) {
-    return api.put(`/users/me/houses/${id}`, houseData);
+    return api.patch(`/users/me/houses/${id}`, houseData);
   },
 
   // DELETE /api/users/me/houses/{id}

@@ -1,23 +1,17 @@
-import { fileURLToPath, URL } from 'node:url'
 import { defineConfig } from 'vite'
 import vue from '@vitejs/plugin-vue'
-import vueDevTools from 'vite-plugin-vue-devtools'
+import path from 'path'
 
 export default defineConfig({
-  plugins: [
-    vue(),
-    vueDevTools()
-  ],
+  plugins: [vue()],
   resolve: {
     alias: {
-      '@': fileURLToPath(new URL('./src', import.meta.url))
+      '@': path.resolve(__dirname, 'src')  // <-- este alias que o @ representa a pasta src
     }
   },
-  server: {
-    fs: {
-      allow: [
-        fileURLToPath(new URL('.', import.meta.url))
-      ]
-    }
+  test: {
+    globals: true,
+    environment: 'jsdom',
+    // Aqui podes adicionar o alias também para testes (Vitest lê do vite config)
   }
 })
