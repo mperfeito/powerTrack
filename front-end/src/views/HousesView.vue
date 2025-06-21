@@ -5,7 +5,7 @@
     <div class="houses-container flex-grow-1 p-5">
       <div class="d-flex justify-content-between align-items-center mb-4">
         <h2 class="text-dark fw-bold">
-          <i class="fas fa-home me-2" style="color: #467054;"></i> My Houses
+          <i class="fas fa-home me-2 icon-primary"></i> My Houses
         </h2>
       </div>
 
@@ -88,7 +88,7 @@
             
             <div class="house-details">
               <div class="detail-item">
-                <i class="fas fa-map-marker-alt me-2" style="color: #467054;"></i>
+                <i class="fas fa-map-marker-alt me-2 icon-primary" aria-hidden="true"></i>
                 <span>{{ house.city }}, {{ house.postalCode }}</span>
               </div>
             </div>
@@ -248,6 +248,9 @@ const setActiveHouse = async (id) => {
   border: 1px solid rgba(0, 0, 0, 0.1);
 }
 
+.icon-primary {
+  color: #467054;
+}
 
 .settings-input {
   background: white;
@@ -276,9 +279,9 @@ const setActiveHouse = async (id) => {
   background: white;
   border-radius: 1rem;
   padding: 1.5rem;
-  transition: all 0.3s ease;
   border: 1px solid rgba(0, 0, 0, 0.1);
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  transition: transform 0.2s ease; 
   
   &:hover {
     transform: translateY(-3px);

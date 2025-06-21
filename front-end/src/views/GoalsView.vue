@@ -11,7 +11,7 @@
 
       <div class="goal-form settings-card p-4 mb-4">
         <h5 class="text-dark mb-3">
-          <i class="fas" :class="isEditing ? 'fa-edit' : 'fa-plus-circle'" style="color: #467054;"></i>
+          <i class="fas" :class="isEditing ? 'fa-edit' : 'fa-plus-circle icon-primary'"></i>
           {{ isEditing ? 'Edit Goal' : 'Add New Goal' }}
         </h5>
         
@@ -92,11 +92,11 @@
             
             <div class="goal-dates">
               <div class="date-item">
-                <i class="fas fa-calendar-day me-2" style="color: #467054;"></i>
+                <i class="fas fa-calendar-day me-2 icon-primary"></i>
                 <span>{{ formatDate(goal.startDate) }}</span>
               </div>
               <div class="date-item">
-                <i class="fas fa-calendar-day me-2" style="color: #467054;"></i>
+                <i class="fas fa-calendar-day me-2 icon-primary"></i>
                 <span>{{ formatDate(goal.endDate) }}</span>
               </div>
             </div>
@@ -207,6 +207,10 @@ const isGoalValid = computed(() => store.isGoalValid);
     box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
     border-color: #dfb046;
   }
+}
+
+.icon-primary {
+  color: #467054;
 }
 
 .goal-content {

@@ -5,7 +5,7 @@
     <div class="appliances-container flex-grow-1 p-5">
       <div class="d-flex justify-content-between align-items-center mb-4">
         <h2 class="text-dark fw-bold">
-          <i class="fas fa-plug me-2" style="color: #467054"></i> My Appliances
+          <i class="fas fa-plug me-2 icon-primary "></i> My Appliances
         </h2>
       </div>
 
@@ -14,8 +14,7 @@
         <h5 class="text-dark mb-3">
           <i
             class="fas"
-            :class="isEditing ? 'fa-edit' : 'fa-plus-circle'"
-            style="color: #467054"
+            :class="isEditing ? 'fa-edit' : 'fa-plus-circle icon-primary '"
           ></i>
           {{ isEditing ? "Edit Appliance" : "Add New Appliance" }}
         </h5>
@@ -100,11 +99,11 @@
 
             <div class="appliance-specs">
               <div class="spec-item">
-                <i class="fas fa-bolt me-2" style="color: #467054"></i>
+                <i class="fas fa-bolt me-2 icon-primary "></i>
                 <span>{{ appliance.nominal_power_watts }}W</span>
               </div>
               <div class="spec-item">
-                <i class="fas fa-clock me-2" style="color: #467054"></i>
+                <i class="fas fa-clock me-2 icon-primary " ></i>
                 <span>{{ appliance.avg_operating_hours || appliance.operating_hours || 0 }}h/day</span>
               </div>
             </div>
@@ -262,6 +261,9 @@ const calculateDailyConsumption = (appliance) => {
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
 }
 
+.icon-primary {
+  color: #467054;
+}
 
 .appliance-list-horizontal {
   display: flex;

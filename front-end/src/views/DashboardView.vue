@@ -14,7 +14,7 @@
         <div class="widget-card current-consumption main-widget">
           <div class="widget-header">
             <h5 class="text-dark">
-              <i class="fas fa-bolt me-2" style="color: #467054;"></i> Current Consumption
+              <i class="fas fa-bolt me-2 icon-primary"></i> Current Consumption
             </h5>
             <span class="badge" style="background-color: #dfb046; color: white;">Live</span>
           </div>
@@ -43,7 +43,7 @@
         <div class="widget-card neighborhood-widget small-widget">  
           <header class="neighborhood-header">
             <h5 class="text-dark">
-              <i class="fas fa-map-marker-alt icon" style="color: #467054; margin-right: 0.6rem;"></i> Neighborhood
+              <i class="fas fa-map-marker-alt icon icons" ></i> Neighborhood
             </h5>
           </header>
 
@@ -98,7 +98,7 @@
         <div class="widget-card top-device medium-widget" v-if="topDevice">
           <div class="widget-header">
             <h5 class="text-dark">
-              <i class="fas fa-fire" style="color: #467054; margin-right: 0.4rem;"></i> Top Consuming Device
+              <i class="fas fa-fire icons"></i> Top Consuming Device
             </h5>
           </div>
           <div class="widget-content">
@@ -150,7 +150,7 @@
         <div class="widget-card goal-progress main-widget">
           <div class="widget-header">
             <h5 class="text-dark">
-              <i class="fas fa-bullseye me-2" style="color: #467054;"></i> Goal Progress
+              <i class="fas fa-bullseye me-2 icon-primary"></i> Goal Progress
             </h5>
           </div>
           <div class="widget-content" v-if="!goalsStore.isLoading">
@@ -224,7 +224,7 @@
         <div class="widget-card time-comparison main-widget position-relative"> 
           <div class="widget-header d-flex justify-content-between align-items-center">
             <h5 class="text-dark">
-              <i class="fas fa-chart-line me-2" style="color: #467054;"></i> Period Average
+              <i class="fas fa-chart-line me-2 icon-primary"></i> Period Average
             </h5>
           </div>
           <div class="widget-content" v-if="periodSeries.length > 0">
@@ -313,13 +313,13 @@ const isGoalCompleted = computed(() => {
   return progress ? progress.isCompleted : false;
 });
 
+/////// GOALS CHART ///////
 const goalsSeries = computed(() => {
   if (!activeGoal.value) return [0];
   const progress = goalsStore.goalProgress[activeGoal.value.id];
   return progress ? [parseFloat(progress.percentage)] : [0]; 
 });
 
-/////// GOALS CHART ///////
 const goalsChartOptions = ref({
   chart: {
     type: 'radialBar',
@@ -645,14 +645,19 @@ const periodChartOptions = {
   min-height: 100vh;
   background-image: url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M11 18c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm48 25c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm-43-7c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm63 31c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM34 90c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm56-76c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM12 86c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm28-65c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm23-11c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-6 60c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm29 22c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zM32 63c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm57-13c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-9-21c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM60 91c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM35 41c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM12 60c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2z' fill='%23467054' fill-opacity='0.05' fill-rule='evenodd'/%3E%3C/svg%3E");
 }
-
 .widgets-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
   gap: 1.5rem;
   grid-auto-rows: minmax(180px, auto);
 }
-
+.icon-primary {
+   color: #467054;
+}
+.icons{
+  color: #467054; 
+  margin-right: 0.4rem;
+}
 .widget-card {
   background: white;
   border-radius: 1rem;
@@ -660,7 +665,6 @@ const periodChartOptions = {
   transition: all 0.3s ease;
   border: 1px solid rgba(0, 0, 0, 0.1);
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
-  
   &:hover {
     transform: translateY(-5px);
     box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
@@ -672,12 +676,10 @@ const periodChartOptions = {
   grid-row: span 1;
   display: flex;
   flex-direction: column;
-  
   .widget-content {
     flex-grow: 1;
     display: flex;
     flex-direction: column;
-    
     h1 {
       font-size: 3.5rem;
       margin-bottom: 1rem;
@@ -687,11 +689,9 @@ const periodChartOptions = {
 .medium-widget {
   grid-row: span 1;
 }
-
 .small-widget {
   grid-row: span 1;
 }
-
 .widget-header {
   display: flex;
   justify-content: space-between;
@@ -704,7 +704,6 @@ const periodChartOptions = {
     color: #212529;
   }
 }
-
 .widget-header select.form-select {
   border: 1px solid #467054;
   border-radius: 0.4rem;
@@ -714,7 +713,6 @@ const periodChartOptions = {
   background-color: white;
   cursor: pointer;
 }
-
 .trend-indicator {
   display: inline-flex;
   align-items: center;
@@ -724,7 +722,6 @@ const periodChartOptions = {
   font-weight: 500;
   background-color: rgba(223, 176, 70, 0.1);
 }
-
 // PERIOD AVERAGE CARD
 .time-comparison-chart {
   display: flex;
@@ -733,7 +730,6 @@ const periodChartOptions = {
   align-items: center;
   justify-content: center;
   margin-top: 3rem;
-
   .chart-bar {
     width: 10rem; 
     border-radius: 0.5rem 0.5rem 0 0;
@@ -745,7 +741,6 @@ const periodChartOptions = {
     font-size: 1rem;
     font-weight: 600;
     color: #467054;
-
     .value {
       font-weight: 600;
       margin-top: 2.5rem;
@@ -753,19 +748,16 @@ const periodChartOptions = {
     }
   }
 }
-
 // NEIGHBORHOOD CARD
 .neighborhood-widget {
   display: flex;
   flex-direction: column;
   height: 100%;
-
 .comparison-context {
   text-align: center;
   margin-top: 1.5rem;
   padding-top: 1rem;
   position: relative;
-  
   &::before {
     content: "";
     position: absolute;
@@ -775,7 +767,6 @@ const periodChartOptions = {
     height: 1px;
     background: rgba(70, 112, 84, 0.2);
   }
-
     .context-text {
     font-size: 0.85rem;
     color: #6c757d;
